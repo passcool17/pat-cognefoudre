@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Pat Cognefoudre — automate solo Everdell : Silverfrost</title>
+  <meta name="description" content="Le Roi des Bandits virtuel : joue Pat Cognefoudre, l'automate solo d'Everdell : Silverfrost, sans manipuler ses cartes.">
+  <meta name="theme-color" content="#3b1f4d">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pat">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="snow" aria-hidden="true"></div>
+  <header class="top">
+    <img class="avatar" src="icons/icon-192.png" alt="Pat Cognefoudre, le lynx Roi des Bandits">
+    <div class="titles">
+      <h1>Pat Cognefoudre</h1>
+      <div class="sub" id="subtitle">Roi des Bandits · Everdell : Silverfrost</div>
+    </div>
+    <button class="icon-btn" id="btn-settings" aria-label="Réglages">⚙️</button>
+  </header>
+
+  <main id="app" aria-live="polite"></main>
+
+  <nav class="tabs" id="tabs" hidden>
+    <button data-tab="tour" class="active"><span>🐾</span>Tour</button>
+    <button data-tab="suivi"><span>📜</span>Suivi</button>
+    <button data-tab="score"><span>🏆</span>Score</button>
+    <button data-tab="regles"><span>📖</span>Règles</button>
+  </nav>
+
+  <dialog id="settings">
+    <form method="dialog" class="sheet">
+      <h2>Réglages</h2>
+      <label class="switch"><input type="checkbox" id="opt-loop"> <span>Carte Tactiques : reboucler en bout de liste</span></label>
+      <p class="hint">Par défaut (décision retenue), Pat s’arrête au bout de la liste Tactiques et joue une carte à la place (+1 neige).</p>
+      <hr>
+      <button type="button" class="btn danger" id="btn-new">Nouvelle partie…</button>
+      <p class="hint">Ta partie est enregistrée automatiquement sur cet appareil.</p>
+      <p class="hint" id="app-version"></p>
+      <button class="btn">Fermer</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
