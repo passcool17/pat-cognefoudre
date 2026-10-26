@@ -84,6 +84,7 @@ export function newGame({ level = 2, loopTactiques = false, startWorkers = 2, se
     cur: null,
     pending: null,
     log: [],
+    stats: { tactiques: 0, lastBlockedTurn: null, lastTurnBlocks: 0 },
   };
   s.planDeck = shuffle(s, PLANS.map((p) => p.id));
   s.complotDeck = shuffle(s, COMPLOTS.map((c) => c.id));
@@ -119,6 +120,13 @@ function planFull(s) {
   return !s.plan || s.plan.count >= 4;
 }
 
+// Compteurs utilisés par l'humeur de Pat (pet.js) ; sans effet sur les règles.
+function bumpTactiques(s) {
+  s.stats ??= { tactiques: 0, lastBlockedTurn: null, lastTurnBlocks: 0 };
+  s.stats.tactiques += 1;
+  s.stats.lastTurnBlocks = s.stats.lastBlockedTurn === s.turn ? s.stats.lastTurnBlocks + 1 : 1;
+  s.stats.lastBlockedTurn = s.turn;
+}
 function log(s, msg) {
   s.log.push({ turn: s.turn, season: s.season, msg });
   if (s.log.length > 400) s.log.splice(0, s.log.length - 400);
@@ -231,6 +239,7 @@ function undoPlacement(s) {
 }
 
 function tactiques(s, fromLoc, viaIdx, reason) {
+  bumpTactiques(s);
   s.cur.usedTactiques = true;
   const dir = s.cur.arrow === 'haut' ? -1 : 1;
   let idx = viaIdx ?? tactiquesIndexOf(fromLoc);
