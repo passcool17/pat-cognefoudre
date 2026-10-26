@@ -1,6 +1,6 @@
-const CACHE = 'pat-cognefoudre-v2';
+const CACHE = 'pat-cognefoudre-v3';
 const ASSETS = [
-  './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'manifest.webmanifest',
+  './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'pet.js', 'voice.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'img/lynx.jpg',
 ];
 self.addEventListener('install', (e) => {

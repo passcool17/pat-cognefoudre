@@ -5,8 +5,12 @@ import {
   newGame, startTurn, answer, adjust, setHumanPrepared, score, winner, workersLeft, patTokensFree,
   nextSeason, locKind, baliseOf, PLAN_BY_ID, COMPLOT_BY_ID,
 } from './logic.js';
+import { MOODS, TIMING, computeMood, happiness, newPet, pickLine } from './pet.js';
+import {
+  voiceSettings, saveVoice, speak, stopSpeaking, unlockOnFirstGesture, currentVoice, speechSupported,
+} from './voice.js';
 
-export const VERSION = '1.0.1';
+export const VERSION = '1.1.0';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -111,6 +115,18 @@ function render() {
   if (rendering) return;
   rendering = true;
   try { document.activeElement?.blur?.(); renderNow(); } finally { rendering = false; }
+  petSync();
+  petFinalReact();
+}
+// Fin de partie : Pat réagit (une fois) au verdict saisi dans l'onglet Score.
+function petFinalReact() {
+  if (!S?.ended || tab !== 'score' || !$('#pet-bubble')) return;
+  const f = finalScores();
+  const key = f.humanTotal > 0 ? (f.patTotal >= f.humanTotal ? 'pat' : 'you') : 'none';
+  const pet = ensurePet();
+  if (pet.finalKey === key) return;
+  pet.finalKey = key;
+  petSay();
 }
 function renderNow() {
   const app = $('#app');
@@ -338,6 +354,7 @@ function renderTour() {
   const nx = nextSeason(S.season);
   let main;
   if (S.pending) main = renderPending();
+  else if (isPlayerTurn()) main = renderPlayerTurn(nx);
   else {
     main = `<section class="card" data-step="idle">
       <p>${S.turn === 0 ? 'Pat joue le premier.' : 'Joue ton tour. Quand tu as fini, appuie sur le bouton.'}</p>
@@ -351,6 +368,112 @@ function renderTour() {
     <div><section class="card"><div class="kicker">Carte Plan · ${SEASON_LABEL[S.season]}</div>${planView()}</section>
     ${miniTracker()}</div></div>`;
 }
+
+// ---------- Pat compagnon (tour du joueur) ----------
+function isPlayerTurn() { return !!S && !S.pending && S.turn > 0 && !S.ended; }
+function ensurePet() { if (S && !S.pet) S.pet = newPet(); return S?.pet; }
+function finalScores() {
+  if (!S?.ended) return null;
+  return { patTotal: score(S, scoreInputs).total, humanTotal: Number(scoreInputs.human) || 0 };
+}
+function currentMood() {
+  const elapsedMs = petCtl.key && isPlayerTurn() ? Date.now() - petCtl.startedAt : 0;
+  return computeMood(S, { elapsedMs, final: finalScores() });
+}
+function petFigure(mood, small = false) {
+  const flakes = Array.from({ length: 7 }, (_, i) => `<i style="--x:${8 + i * 13}%;--d:${4 + (i % 3) * 1.3}s;--l:-${(i * 0.9) % 4.5}s">❄</i>`).join('');
+  return `<button type="button" class="pet ${small ? 'small' : ''}" id="pet" data-mood="${mood}" aria-label="Toucher Pat pour qu’il parle">
+      <span class="pet-body"><img src="img/lynx.jpg" alt="Pat Cognefoudre, le lynx Roi des Bandits">
+      <span class="lid l1"></span><span class="lid l2"></span></span>
+      <span class="pet-flakes" aria-hidden="true">${flakes}</span>
+    </button>`;
+}
+function petPanel(mood) {
+  const pet = ensurePet();
+  const m = MOODS[mood];
+  const h = S.ended ? (mood === 'triomphant' ? 100 : 10) : happiness(S);
+  return `<div class="pet-stage">
+      ${petFigure(mood)}
+      <div class="bubble" id="pet-bubble" aria-live="polite">${esc(pet.text || '…')}</div>
+    </div>
+    <div class="mood" id="pet-mood" data-mood="${mood}">
+      <span class="mood-emoji">${m.emoji}</span><span class="mood-label">${m.label}</span>
+      <span class="moodbar" role="meter" aria-label="Humeur de Pat" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${h}"><span style="width:${h}%"></span></span>
+    </div>
+    <div class="row pet-actions">
+      <button type="button" class="btn ghost" id="btn-talk">🗣️ Parler</button>
+      <button type="button" class="btn ghost" id="btn-mute" aria-pressed="${!voiceSettings.on}">${voiceSettings.on ? '🔊 Voix' : '🔇 Muet'}</button>
+    </div>`;
+}
+function renderPlayerTurn(nx) {
+  return `<section class="card player-turn" data-step="idle" data-player="1">
+      <div class="kicker">Tour du joueur · ${SEASON_LABEL[S.season]}</div>
+      ${petPanel(currentMood())}
+      <p class="hint center">${S.passed ? 'Pat a passé : continue tes tours jusqu’à ce que tu passes aussi.' : 'Joue ton tour. Touche Pat s’il te manque de compagnie.'}</p>
+      <button class="btn huge red" id="btn-turn">J’ai fini mon tour → Tour de Pat</button>
+      ${nx && !S.humanPrepared[nx] ? `<button class="btn ghost block" style="margin-top:10px" id="btn-human-prep">Je viens de me préparer pour ${SEASON_ARTICLE[nx]}</button>` : ''}
+      ${S.passed && !S.ended ? '<button class="btn block" style="margin-top:10px" data-a2="endgame">J’ai passé aussi → fin de partie</button>' : ''}
+    </section>`;
+}
+
+const petCtl = { key: null, startedAt: 0, timers: [], talkTimer: null };
+function clearPetTimers() { petCtl.timers.forEach(clearTimeout); petCtl.timers = []; }
+function later(ms, fn) { petCtl.timers.push(setTimeout(fn, ms)); }
+// Appelé après chaque rendu : démarre ou arrête les répliques du tour du joueur.
+function petSync() {
+  if (!isPlayerTurn()) { clearPetTimers(); petCtl.key = null; stopTalking(); return; }
+  const key = `${S.turn}`;
+  if (petCtl.key === key) return;
+  clearPetTimers();
+  petCtl.key = key;
+  petCtl.startedAt = Date.now();
+  const pet = ensurePet();
+  if (pet.greetedTurn !== S.turn) { pet.greetedTurn = S.turn; petSay(); }
+  later(TIMING.chatterMin + Math.random() * (TIMING.chatterMax - TIMING.chatterMin), () => { if (Math.random() < 0.75) petSay(); });
+  const nag = () => { petSay(); later(TIMING.nagEvery, nag); };
+  later(TIMING.slowAfter, nag);
+}
+function petSay() {
+  if (!S) return;
+  const mood = currentMood();
+  const pet = ensurePet();
+  const line = pickLine(pet, mood, S);
+  pet.text = line.text; pet.mood = mood;
+  save(); // réplique cosmétique : pas d'entrée dans l'historique d'annulation
+  const bubble = $('#pet-bubble');
+  if (!bubble) return;
+  bubble.textContent = line.text;
+  bubble.classList.remove('pop'); void bubble.offsetWidth; bubble.classList.add('pop');
+  const m = MOODS[mood];
+  const md = $('#pet-mood');
+  if (md) {
+    md.dataset.mood = mood;
+    md.querySelector('.mood-emoji').textContent = m.emoji;
+    md.querySelector('.mood-label').textContent = m.label;
+  }
+  const fig = $('#pet');
+  if (fig) { fig.dataset.mood = mood; fig.classList.add('talking'); }
+  clearTimeout(petCtl.talkTimer);
+  const minMs = Math.max(1800, line.text.length * 55);
+  const t0 = Date.now();
+  window.__petSpoken = (window.__petSpoken || 0) + (speak(line.text, () => {
+    petCtl.talkTimer = setTimeout(stopTalking, Math.max(0, minMs - (Date.now() - t0)));
+  }) ? 1 : 0);
+  if (!voiceSettings.on || !speechSupported()) petCtl.talkTimer = setTimeout(stopTalking, minMs);
+}
+function stopTalking() { $('#pet')?.classList.remove('talking'); }
+function syncVoiceUI() {
+  $('#opt-voice').checked = !!voiceSettings.on;
+  $('#opt-volume').value = String(voiceSettings.volume);
+  $('#opt-volume').disabled = !voiceSettings.on;
+  const v = currentVoice();
+  $('#voice-status').textContent = !speechSupported()
+    ? 'Cet appareil ne propose pas de synthèse vocale : Pat parlera seulement dans sa bulle.'
+    : v ? `Voix utilisée : ${v.name} (${v.lang}), grave et un peu lente.` : 'Aucune voix française trouvée pour l’instant : Pat parlera dans sa bulle (et avec la voix par défaut si elle existe).';
+  const mb = $('#btn-mute');
+  if (mb) { mb.textContent = voiceSettings.on ? '🔊 Voix' : '🔇 Muet'; mb.setAttribute('aria-pressed', String(!voiceSettings.on)); }
+}
+function setVoiceOn(on) { voiceSettings.on = on; if (!on) stopSpeaking(); saveVoice(); syncVoiceUI(); }
 
 function miniTracker() {
   return `<section class="card"><div class="stats">
@@ -441,6 +564,7 @@ function renderScore() {
     <div class="verdict ${w === 'pat' ? 'pat' : 'you'}" id="verdict">${w === 'pat'
       ? `Pat l’emporte (${sc.total} contre ${Number(scoreInputs.human) || 0})${sc.total === (Number(scoreInputs.human) || 0) ? ' : en cas d’égalité, Pat gagne' : ''}. Le Roi des Bandits règne sur Silverfrost !`
       : `Victoire ! ${Number(scoreInputs.human)} contre ${sc.total}. Pat part en exil.`}</div>
+    ${S.ended ? `<div class="pet-final">${petPanel(currentMood())}</div>` : ''}
     <button class="btn ghost block" style="margin-top:12px" id="btn-new2">Nouvelle partie</button>
   </section></div>`;
 }
@@ -503,6 +627,9 @@ function bind() {
   }
   $('#btn-ready')?.addEventListener('click', () => { showChecklist = false; render(); window.scrollTo(0, 0); });
   $('#btn-turn')?.addEventListener('click', () => act((s) => startTurn(s)));
+  $('#pet')?.addEventListener('click', petSay);
+  $('#btn-talk')?.addEventListener('click', petSay);
+  $('#btn-mute')?.addEventListener('click', () => setVoiceOn(!voiceSettings.on));
   $('#btn-undo')?.addEventListener('click', undo);
   $('#btn-human-prep')?.addEventListener('click', () => act((s) => setHumanPrepared(s, nextSeason(s.season))));
   $('#btn-new2')?.addEventListener('click', confirmNew);
@@ -555,7 +682,15 @@ $('#tabs').addEventListener('click', (e) => {
   if (!b) return;
   tab = b.dataset.tab; render(); window.scrollTo(0, 0);
 });
-$('#btn-settings').addEventListener('click', () => { $('#app-version').textContent = `Version ${VERSION}`; $('#settings').showModal(); });
+$('#btn-settings').addEventListener('click', () => { $('#app-version').textContent = `Version ${VERSION}`; syncVoiceUI(); $('#settings').showModal(); });
+$('#opt-voice').addEventListener('change', (e) => setVoiceOn(e.target.checked));
+$('#opt-volume').addEventListener('input', (e) => { voiceSettings.volume = Number(e.target.value); saveVoice(); });
+$('#btn-voice-test').addEventListener('click', () => {
+  if (!voiceSettings.on) setVoiceOn(true);
+  speak('Grrr… Je suis Pat Cognefoudre, le Roi des Bandits. Tu m’entends bien ?');
+});
+unlockOnFirstGesture();
+if (speechSupported()) window.speechSynthesis.addEventListener?.('voiceschanged', () => { if ($('#settings').open) syncVoiceUI(); });
 $('#opt-loop').addEventListener('change', (e) => { if (S) act((s) => { s.opts.loopTactiques = e.target.checked; }); });
 $('#btn-new').addEventListener('click', confirmNew);
 
