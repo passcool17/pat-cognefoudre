@@ -2,6 +2,7 @@
 // Usage : BASE_URL=http://localhost:8765/ node tests/e2e.mjs  (Chrome système par défaut)
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
+import assert from 'node:assert/strict';
 
 const BASE = process.env.BASE_URL || 'http://localhost:8765/';
 const SHOTS = process.env.SHOTS || '../pat-cognefoudre-shots';
@@ -65,7 +66,17 @@ for (const vp of viewports) {
           continue;
         }
         if (kind === 'askHuman') { await maybeShot('05-preparation-question'); await page.click(rnd() < 0.6 ? '[data-a="yes"]' : '[data-a="no"]'); continue; }
-        if (kind === 'prepare') { await maybeShot('06-preparation-pat'); await page.click('[data-a="ok"]'); continue; }
+        if (kind === 'prepare') {
+          await maybeShot('06-preparation-pat');
+          const kick = await page.textContent('[data-step="prepare"] .kicker');
+          const fury = await page.$('[data-fury]');
+          if (/hiver/.test(kick)) {
+            assert(fury && /Fureur de l’hiver/.test(await fury.textContent()) && /p\.14/.test(await fury.textContent()), 'rappel Fureur de l’hiver absent');
+            if (capture && !taken.has('fureur')) { taken.add('fureur'); await fury.scrollIntoViewIfNeeded(); await page.screenshot({ path: `${SHOTS}/decision-fureur-preparation.png` }); }
+          } else assert(!fury, `rappel Fureur hors hiver : ${kick}`);
+          assert(!(await page.$('[data-step="prepare"] .flag')), 'drapeau ambigu restant');
+          await page.click('[data-a="ok"]'); continue;
+        }
         if (kind === 'place') {
           await maybeShot('03-tour-ouvrier');
           if (rnd() < 0.25) await page.check('[name="snow"]');

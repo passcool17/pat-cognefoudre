@@ -56,6 +56,42 @@ await step('Règles : 3 couches (Everdell, changements Silverfrost, solo Pat), 9
   await page.screenshot({ path: `${SHOTS}/regles-silverfrost.png` });
 });
 
+await step('Règles : plus de note « à confirmer », pages du livret citées, plus de cas non prévus', async () => {
+  const txt = (await page.textContent('#app'));
+  assert(!/à confirmer/i.test(txt), 'il reste « à confirmer »');
+  assert(!(await page.$('.rules .flag')), 'il reste un drapeau dans les règles');
+  const solo = await page.textContent('.rules');
+  for (const w of ['schéma p.18', 'mise en place p.6', '1 ouvrier normal + le garde forestier', 'toute la pile', 'il garde le feu (p.21)', '« Balise ? »', 'p.17']) assert(solo.includes(w), w);
+  assert(!(await page.$('ul.non-prevus')) && !(await page.$('#non-prevus')), 'la section « Cas non prévus » du solo doit avoir disparu');
+  assert(!/Cas non prévus/.test(txt), 'titre « Cas non prévus » encore là');
+  const fur = await page.textContent('#fureur');
+  assert(/premier à se préparer pour l’hiver/.test(fur) && /décision de Pascal, règle de base p\.14/.test(fur), fur);
+  const shots = [['#solo', 'confirm-solo-tour.png'], ['#fureur', 'decision-fureur.png']];
+  for (const [sel, file] of shots) {
+    await page.evaluate((s) => { const el = document.querySelector(s); window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 70); }, sel);
+    await page.waitForTimeout(150);
+    await page.screenshot({ path: `${SHOTS}/${file}` });
+  }
+  await page.evaluate(() => { const h = [...document.querySelectorAll('.rules h3')].find((x) => x.textContent === 'Ouvriers'); window.scrollTo(0, h.getBoundingClientRect().top + window.scrollY - 70); });
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: `${SHOTS}/confirm-solo-ouvriers.png` });
+  await page.evaluate(() => { const h = [...document.querySelectorAll('.rules h3')].find((x) => x.textContent === 'Saisons'); window.scrollTo(0, h.getBoundingClientRect().top + window.scrollY - 70); });
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: `${SHOTS}/confirm-solo-saisons.png` });
+  // Réponses du concepteur (BGG, juill. 2025)
+  assert((solo.match(/réponse du concepteur, BGG, juill\. 2025/g) || []).length === 3, 'trois réponses du concepteur citées');
+  for (const w of ['ne gagne <b>pas</b> de feu', 'Leaf Ranger', 'Bout de la liste Tactiques']) assert((await page.innerHTML('.rules')).includes(w), w);
+  assert(!(await page.$('#opt-loop')), 'option rebouclage encore présente');
+  for (const [title, file] of [['Ouvriers', 'concepteur-tactiques.png'], ['Cartes', 'concepteur-leaf-ranger.png'], ['Saisons', 'concepteur-feu.png']]) {
+    await page.evaluate((t) => { const h = [...document.querySelectorAll('.rules h3')].find((x) => x.textContent === t); const li = [...h.nextElementSibling.querySelectorAll('li')].find((x) => /concepteur/.test(x.textContent)); window.scrollTo(0, li.getBoundingClientRect().top + window.scrollY - 200); }, title);
+    await page.waitForTimeout(150);
+    await page.screenshot({ path: `${SHOTS}/${file}` });
+  }
+  const camp = await page.$('.rules.camp');
+  if (camp) return 'section campagne présente';
+  return '4 captures confirm-*.png';
+});
+
 await page.click('[data-tab="tour"]');
 let seenRanger = false; let seenCard = false;
 await step('tour de Pat : garde forestier (ton ouvrier déjà là) et Vallée (doubles empilés)', async () => {

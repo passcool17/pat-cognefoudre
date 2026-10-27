@@ -50,6 +50,13 @@ function complotBaliseValue(complot) {
 }
 
 // ---------- état ----------
+// Fureur de l’hiver : Pat compte comme un joueur (décision de Pascal, règle de base p.14).
+// S’il est le premier à se préparer pour l’hiver, il la déclenche.
+export function winterFuryNote(season) {
+  if (season !== 'hiver') return '';
+  return 'Fureur de l’hiver : si la tuile montre encore 1 feu, Pat est le premier à se préparer pour l’hiver et la déclenche. Retourne la tuile sur 2 feux (déblayer la neige coûte désormais 2 feux à tout le monde), puis défausse les Grosses Créatures visibles et remplace-les par de nouvelles (règle de base p.14).';
+}
+
 export function nextSeason(season) {
   const i = SEASONS.indexOf(season);
   return i >= 0 && i < SEASONS.length - 1 ? SEASONS[i + 1] : null;
@@ -69,11 +76,11 @@ function withMist(s, pending) {
   return pending;
 }
 
-export function newGame({ level = 2, loopTactiques = false, startWorkers = 2, seed, mist = false } = {}) {
+export function newGame({ level = 2, startWorkers = 1, seed, mist = false } = {}) {
   const s = {
     v: 1,
     level,
-    opts: { loopTactiques, startWorkers, mist },
+    opts: { startWorkers, mist },
     seed: (seed ?? Math.floor(Math.random() * 2 ** 32)) >>> 0,
     season: 'ete',
     humanPrepared: { automne: false, hiver: false, printemps: false },
@@ -248,17 +255,29 @@ function undoPlacement(s) {
   s.cur.placed = null;
 }
 
+// Carte Tactiques (livret p.19) : depuis le lieu bloqué, on descend ou on monte la liste dans le sens de la flèche
+// du Plan en cours. Réponse du concepteur (BGG, juill. 2025) : arrivé au bout de la liste, c'est encore la flèche
+// qui donne le sens ; Pat ne joue pas de carte à la place. Dans l'app, on repart donc depuis le lieu bloqué
+// d'origine dans l'autre sens (les lieux déjà essayés ne sont pas repris).
 function tactiques(s, fromLoc, viaIdx, reason) {
   bumpTactiques(s);
   s.cur.usedTactiques = true;
-  const dir = s.cur.arrow === 'haut' ? -1 : 1;
-  let idx = viaIdx ?? tactiquesIndexOf(fromLoc);
   const n = TACTIQUES.length;
-  for (let step = 0; step < n; step++) {
-    idx += dir;
+  if (s.cur.tStart == null) {
+    s.cur.tStart = viaIdx ?? tactiquesIndexOf(fromLoc);
+    s.cur.tDir = s.cur.arrow === 'haut' ? -1 : 1;
+    s.cur.tTurned = false;
+  }
+  let idx = viaIdx ?? s.cur.tStart;
+  for (let step = 0; step < 2 * n; step++) {
+    idx += s.cur.tDir;
     if (idx < 0 || idx >= n) {
-      if (!s.opts.loopTactiques) break;
-      idx = (idx + n) % n;
+      if (s.cur.tTurned) break;
+      s.cur.tTurned = true;
+      s.cur.tDir = -s.cur.tDir;
+      idx = s.cur.tStart;
+      log(s, 'Tactiques : bout de la liste, on repart dans l’autre sens depuis le lieu bloqué.');
+      continue;
     }
     const entry = TACTIQUES[idx];
     if (entry === 'voyage' && s.season !== 'printemps') { log(s, 'Tactiques : Voyage sauté (hors printemps).'); continue; }
@@ -276,8 +295,8 @@ function tactiques(s, fromLoc, viaIdx, reason) {
     if (reason && s.pending) s.pending.reason = reason;
     return s;
   }
-  // Bout de la liste atteint sans lieu disponible.
-  log(s, 'Carte Tactiques épuisée : Pat joue une carte à la place (+1 neige).');
+  // Toute la carte essayée dans les deux sens : cas théorique (tous les lieux bloqués), non traité par le livret.
+  log(s, 'Carte Tactiques : aucun lieu disponible dans les deux sens. Pat joue une carte à la place (+1 neige).');
   s.tactiquesPos = null;
   return beginCard(s, s.cur.quarter.src, { replaced: true, why: 'tactiquesEnd' });
 }

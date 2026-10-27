@@ -4,10 +4,10 @@ import {
 import {
   camp, setupEntryCard, renderCampaignScreen, campaignBanner, scoreCampaignRows, mistNote, rulesSection, bindCampaign,
 } from './campagne-ui.js';
-import { humanFinal, gameOptions } from './campagne.js';
+import { humanFinal, gameOptions, banditPlaceNote } from './campagne.js';
 import {
   newGame, startTurn, answer, adjust, setHumanPrepared, score, winner, workersLeft, patTokensFree,
-  nextSeason, locKind, baliseOf, PLAN_BY_ID, COMPLOT_BY_ID, giveToPat, cityColors,
+  nextSeason, locKind, baliseOf, PLAN_BY_ID, COMPLOT_BY_ID, giveToPat, cityColors, winterFuryNote,
 } from './logic.js';
 import { MOODS, TIMING, TEST_LINE, computeMood, happiness, newPet, pickLine } from './pet.js';
 import {
@@ -18,7 +18,7 @@ import { initMusic, musicSettings, setMusicOn, setMusicVolume } from './music.js
 import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
 import { introSettings, saveIntro, introWanted, showIntro, introOpen } from './intro.js';
 
-export const VERSION = '1.7.0';
+export const VERSION = '1.7.1';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -28,7 +28,7 @@ let S = load(KEY);
 let history = load(HKEY) || [];
 let scoreInputs = load(SKEY) || { cardPoints: 0, mostSnow: false, human: 0, questPoints: null };
 let tab = 'tour';
-let setupDraft = { level: 2, startWorkers: 2, loop: false };
+let setupDraft = { level: 2 };
 let showChecklist = false;
 
 function load(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
@@ -152,7 +152,6 @@ function renderNow() {
   tabs.hidden = false;
   tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
   $('#subtitle').textContent = `${S.campaign ? `Campagne An ${S.campaign.year} · ` : ''}Niveau ${S.level} · ${SEASON_LABEL[S.season]} · tour ${S.turn}`;
-  $('#opt-loop').checked = !!S.opts.loopTactiques;
   const banner = tab === 'tour' || tab === 'score' ? campaignBanner(S, tab === 'tour') : '';
   app.innerHTML = banner + { tour: renderTour, suivi: renderSuivi, score: renderScore, regles: renderRegles }[tab]();
   bind();
@@ -177,9 +176,6 @@ function renderSetup() {
   <section class="card">
     <h2>Niveau de difficulté</h2>
     <div class="levels">${lv}</div>
-    <h3>Réglages</h3>
-    <div class="field"><span class="lbl">Ouvriers normaux de Pat en été<br><span class="hint">Comme pour toi à 2 joueurs (mise en place p.6, non numérisée). Valeur par défaut : 2, à vérifier.</span></span>${stepper('startWorkers', setupDraft.startWorkers, 1, 6)}</div>
-    <label class="check"><input type="checkbox" name="loop" ${setupDraft.loop ? 'checked' : ''}> Carte Tactiques : reboucler en bout de liste <span class="flag">option</span></label>
     <button class="btn huge red" id="btn-start">Mélanger les cartes de Pat</button>
   </section>
   ${setupEntryCard()}`;
@@ -254,14 +250,14 @@ function renderPending() {
       return `<section class="card instr" data-step="prepare"><div class="kicker">Pat se prépare pour ${SEASON_ARTICLE[next]}</div>
         <div class="big">Fais la préparation de Pat :</div>
         <ul class="steps">
-          <li>Prends toutes les cartes de la Vallée avec un jeton Pat (${S.patTokensVallee} en jeu). Place-les <b>face cachée</b> chez Pat, avec la neige qui était dessus. Remets ces jetons Pat dans la réserve. Sur une pile de doubles, Pat ne prend que la carte du dessus.</li>
+          <li>Prends toutes les cartes de la Vallée avec un jeton Pat (${S.patTokensVallee} en jeu). Place-les <b>face cachée</b> chez Pat, avec la neige qui était dessus. Remets ces jetons Pat dans la réserve. Sur une pile de doubles, Pat prend <b>toute la pile</b> sous le jeton (livret p.20).</li>
           <li>Rends à Pat ses ouvriers et donne-lui ${WORKER_GAIN[next] === 2 ? '2 nouveaux ouvriers' : '1 nouvel ouvrier'}.</li>
           <li>Retourne ${STORM_CARDS[next]} carte${STORM_CARDS[next] > 1 ? 's' : ''} Tempête de neige et ajoute la neige sur le plateau. <b>Rien dans la ville de Pat.</b></li>
           ${next === 'automne' ? '<li>Pose un jeton Pat sur le <b>lieu partagé de la Forge</b>. Désormais, quand tu le visites, donne ton feu à Pat.</li>' : ''}
           ${next === 'hiver' ? '<li>Pose un jeton Pat sur le <b>lieu partagé de la Guilde</b>. Désormais, quand tu le visites, donne ton feu à Pat.</li>' : ''}
           <li>Défausse le Plan et les Complots en jeu : l’app révèle un nouveau Plan.</li>
         </ul>
-        ${next === 'hiver' ? '<p class="hint"><span class="flag">ambigu</span> Les règles solo ne disent pas si Pat déclenche la Fureur de l’hiver. À toi de décider.</p>' : ''}
+        ${winterFuryNote(next) ? `<p data-fury>❄️ <b>${winterFuryNote(next).replace(/^Fureur de l’hiver : /, 'Fureur de l’hiver :</b> ')}</p>` : ''}
         <div class="field"><span class="lbl">Cartes prises face cachée</span>${stepper('cardsTaken', Math.min(S.patTokensVallee, 10))}</div>
         <div class="field"><span class="lbl">Neige gagnée sur ces cartes</span>${stepper('snowTaken', 0)}</div>
         <button class="btn huge red" data-a="ok" data-form="prepare">Préparation faite</button></section>`;
@@ -280,6 +276,7 @@ function renderPending() {
         <p>${detail}</p>
         ${ranger ? '<p><b>Garde forestier :</b> il peut aller sur un lieu exclusif <b>où se trouve ton ouvrier</b> (pas sur une carte rouge ni sur un Voyage). Il gagne 1 feu sauf s’il partage le lieu avec ton ouvrier.</p>' : ''}
         <label class="check"><input type="checkbox" name="snow"> Il y avait de la neige : Pat la déblaie gratuitement (+1 neige)</label>
+        ${banditPlaceNote(S) ? `<p class="hint" data-bandit>🗡️ ${banditPlaceNote(S)}</p>` : ''}
         <div class="stack">
           <button class="btn red block" data-a="ok" data-form="place">${ranger ? 'Lieu libre : posé (+1 feu)' : 'C’est fait : ouvrier posé'}</button>
           ${ranger ? '<button class="btn block" data-a="occupied" data-form="place">Ton ouvrier est déjà là : posé quand même (pas de feu)</button>' : ''}
@@ -326,7 +323,7 @@ function renderPending() {
         <div class="stack">${none ? '<button class="btn red block" data-a="none">Continuer</button>' : '<button class="btn red block" data-a="ok">Jeton posé</button><button class="btn ghost block" data-a="none">Aucune carte possible</button>'}</div></section>`;
     }
     case 'card': {
-      const why = { noWorkers: 'Pat n’a plus d’ouvriers et tu ne t’es pas encore préparé.', tactiquesEnd: 'Aucun lieu trouvé sur la carte Tactiques : Pat joue une carte à la place.', springNoCity: '' }[p.why] || (p.replaced ? 'Pat remplace son placement d’ouvrier.' : '');
+      const why = { noWorkers: 'Pat n’a plus d’ouvriers et tu ne t’es pas encore préparé.', tactiquesEnd: 'Aucun lieu disponible sur toute la carte Tactiques (dans les deux sens) : Pat joue une carte à la place.', springNoCity: '' }[p.why] || (p.replaced ? 'Pat remplace son placement d’ouvrier.' : '');
       const head = p.src === 'pile'
         ? '<div class="big">Retourne la carte du dessus de la <b>pile principale</b> et place-la face visible dans la ville de Pat.</div>'
         : `<div class="big">Pat joue une carte de la <b>Vallée</b>.</div><p>Couleur prioritaire, de gauche à droite :</p>${chipsFor(p.colors)}
@@ -355,7 +352,7 @@ function renderPending() {
         <button class="btn ghost block" data-a="later">Je continue à jouer</button></div></section>`;
     case 'endCollect':
       return `<section class="card instr" data-step="endCollect"><div class="kicker">Fin de partie</div>
-        <div class="big">Pat prend toutes les cartes de la Vallée avec un jeton Pat (${S.patTokensVallee}), face cachée, avec leur neige.</div>
+        <div class="big">Pat prend toutes les cartes de la Vallée avec un jeton Pat (${S.patTokensVallee}), face cachée, avec leur neige. Pile de doubles : toute la pile (livret p.20).</div>
         <div class="field"><span class="lbl">Cartes prises face cachée</span>${stepper('cardsTaken', S.patTokensVallee)}</div>
         <div class="field"><span class="lbl">Neige sur ces cartes</span>${stepper('snowTaken', 0)}</div>
         <button class="btn huge red" data-a="ok" data-form="prepare">Aller au décompte</button></section>`;
@@ -530,9 +527,9 @@ function neighbourCard() {
       </div>
       <p class="hint">Couleurs connues (${known}/${S.city}) : ${colors}</p>
       <button class="btn block" data-ev="give-fire">Je donne 1 feu à Pat → il le garde</button>
-      <button class="btn block" style="margin-top:8px" data-ev="give">Je donne une carte à Pat / il pioche → +1 carte face cachée</button>
+      <button class="btn block" style="margin-top:8px" data-ev="give">Je donne une carte à Pat / il pioche (ex. Leaf Ranger) → +1 carte face cachée</button>
       <button class="btn ghost block" style="margin-top:8px" data-ev="give-res">Je donne une autre ressource → retour à la réserve</button>
-      <p class="hint"><span class="flag">interprétation</span> Pat ne garde aucune ressource, sauf le feu (bonus de niveau).</p>
+      <p class="hint">Pat ne garde aucune ressource, sauf le feu (livret p.21).</p>
       <p class="hint">Pat n’a pas de main : une carte donnée va face cachée chez lui, sans limite. ${S.passed ? '<b>Pat a passé : on ne lui donne plus rien.</b>' : 'Une fois que Pat a passé, on ne lui donne plus rien.'}</p>
     </section>`;
 }
@@ -564,7 +561,7 @@ function renderSuivi() {
     ${neighbourCard()}
     <section class="card"><div class="kicker">Carte Tactiques · flèche ${PLAN_BY_ID[S.plan.id].arrow === 'bas' ? '⬇' : '⬆'}</div>
       <ol class="tact">${TACTIQUES.map((t, i) => `<li class="${S.tactiquesPos === i ? 'on' : ''}">${tactLabel(t)}</li>`).join('')}</ol>
-      <p class="hint">${S.opts.loopTactiques ? 'Rebouclage activé.' : 'Sans rebouclage : au bout de la liste, Pat joue une carte (+1 neige).'}</p></section>
+      <p class="hint">On suit la flèche du Plan. Au bout de la liste, on repart dans l’autre sens depuis le lieu bloqué (réponse du concepteur, BGG, juill. 2025).</p></section>
   </div><div>
     <section class="card"><div class="kicker">Ressources de Pat</div><div class="stats">
       ${statAdj('city', S.city, 'cartes en ville')}
@@ -631,7 +628,7 @@ function renderRegles() {
   <h3 id="silverfrost">② Ce que Silverfrost change (résumé)</h3><ul class="silverfrost">
     <li>❄ <b>Neige</b> : elle arrive sur les cartes et les lieux à chaque préparation de saison. Tu paies du feu pour la déblayer ; plus tu en déblaies, plus tu marques. Elle recouvre aussi les cartes de ta ville. Pat la déblaie gratuitement et la garde (rien dans sa ville).</li>
     <li>🌲 <b>Garde forestier</b> : il peut aller sur un lieu exclusif déjà occupé par un adversaire (pas par toi-même, pas sur une carte rouge ni un Voyage), ou gagne 1 feu sur un lieu libre. Celui de Pat gagne 1 feu sauf si ton ouvrier est sur le lieu.</li>
-    <li>🃏 <b>Vallée</b> : les doubles sont empilés au même endroit, donc toujours 8 cartes différentes visibles. Pour Pat, une pile = une carte (celle du dessus).</li>
+    <li>🃏 <b>Vallée</b> : les doubles sont empilés au même endroit, donc toujours 8 cartes différentes visibles. Quand Pat joue une carte de la Vallée, une pile = une carte (celle du dessus) ; un jeton Pat posé sur une pile lui fait prendre toute la pile (p.20).</li>
     <li>🚫 <b>Pas d’Événements</b> : à la place, la Guilde des Forestiers et ses quêtes.</li>
     <li>${scrollIcon('montagne')} <b>Quêtes en montagne</b> : publiques, le premier qui la réalise la prend (Pat aussi). ${scrollIcon('plaine')} <b>Quêtes en plaine</b> : objectifs personnels, toute la partie (celles de Pat sont dans sa pile).</li>
     <li>🔥 <b>Balises</b> : on y dépense du feu pour appeler une Grosse Créature ; le choix change pendant la partie. Pat défausse la créature et prend ses points.</li>
@@ -642,33 +639,31 @@ function renderRegles() {
   <h3>À chaque tour</h3><ul>
     <li>Une seule action : placer un ouvrier, jouer une carte, ou se préparer pour la saison.</li>
     <li>L’app révèle un Complot et le pose sur le prochain coin du Plan : la caverne d’abord, puis dans le sens horaire. 🐾 = ouvrier, 🃏 = carte.</li>
-    <li>On lit le quart du Complot qui recouvre ce coin <span class="flag">interprétation</span>.</li></ul>
+    <li>On lit le quart du Complot qui recouvre ce coin (schéma p.18).</li>
+    <li>Pile Quête de Pat : 5 quêtes face cachée. Niveau 1 : 5 ${scrollIcon('plaine')} ; niveaux 2 et 3 : 4 ${scrollIcon('plaine')} + 1 ${scrollIcon('montagne')} ; niveau 4 : 3 ${scrollIcon('plaine')} + 2 ${scrollIcon('montagne')} (p.17).</li></ul>
   <h3>Ouvriers</h3><ul>
+    <li>En été, Pat a 2 ouvriers comme toi : 1 ouvrier normal + le garde forestier (mise en place p.6).</li>
     <li>Ouvriers normaux d’abord, garde forestier en dernier. Le garde forestier peut partager un lieu avec ton ouvrier (sans feu) ; sinon, il gagne 1 feu.</li>
     <li>Pat ne gagne ni ne paie de ressources. Il déblaie la neige gratuitement et la garde.</li>
-    <li>Forge : lieu exclusif, +1 feu. Guilde : lieu exclusif, puis une Quête en montagne ${scrollIcon('montagne')} si possible, sinon la quête du haut de sa pile. Balise : il défausse la Grosse Créature et gagne ses points. Voyage : au printemps seulement (au niveau 1, toujours le lieu partagé à 2).</li>
-    <li>Lieu indisponible : suis la carte Tactiques dans le sens de la flèche du Plan, puis pose un jeton Pat dans la Vallée.</li>
-    <li>Plus d’ouvriers alors que tu ne t’es pas préparé : il joue la carte de ce coin et gagne 1 neige.</li></ul>
+    <li>Forge : lieu exclusif, +1 feu. Guilde : lieu exclusif, puis une Quête en montagne ${scrollIcon('montagne')} si possible, sinon la quête du haut de sa pile. Si aucune quête n’est possible (pile vide, aucune ${scrollIcon('montagne')}), la carte Tactiques déplace l’ouvrier et un jeton Pat va dans la Vallée (p.19). Balise : il défausse la Grosse Créature et gagne ses points ; « Balise ? » sur la carte Tactiques = la valeur de balise indiquée ailleurs sur le Complot en cours (p.19). Voyage : au printemps seulement (au niveau 1, toujours le lieu partagé à 2).</li>
+    <li>Lieu indisponible : suis la carte Tactiques dans le sens de la flèche du Plan, puis pose un jeton Pat dans la Vallée (p.19).</li>
+    <li>Bout de la liste Tactiques atteint (par exemple, déjà un ouvrier sur la balise du bas) : c’est encore la flèche qui donne le sens, Pat ne joue pas de carte à la place <i>(réponse du concepteur, BGG, juill. 2025)</i>. L’app repart du lieu bloqué dans l’autre sens.</li>
+    <li>Plus d’ouvriers alors que tu ne t’es pas préparé : il joue la carte de ce coin et gagne 1 neige (p.19). Au printemps aussi : tant qu’il a moins de 15 cartes, chaque case 🐾 devient une carte (+1 neige) (p.19 et p.21).</li>
+    <li>Dons au joueur à ta gauche (Pat) : il garde le feu (p.21), une carte va face cachée chez lui (p.20), toute autre ressource retourne à la réserve car il ne gagne pas de ressources (p.19 et p.21).</li></ul>
   <h3>Cartes</h3><ul>
     <li>PILE : la carte du dessus de la pile principale, face visible dans sa ville.</li>
     <li>VALLÉE : la couleur du Complot de gauche à droite, puis la valeur la plus haute, puis la neige, puis de gauche à droite et de haut en bas.</li>
-    <li>Toujours gratuit, texte ignoré. Un jeton Pat sur la carte revient simplement dans la réserve.</li></ul>
+    <li>Toujours gratuit, texte ignoré. Un jeton Pat sur la carte revient simplement dans la réserve.</li>
+    <li>Une carte que Pat pioche dans la Vallée (par exemple avec le Leaf Ranger : « ton adversaire peut piocher une carte de la Vallée ») va face cachée chez lui <i>(réponse du concepteur, BGG, juill. 2025)</i> ; une carte qu’il pioche dans la pile aussi (p.21).</li></ul>
   <h3>Saisons</h3><ul>
+    <li id="fureur">Fureur de l’hiver : Pat compte comme un joueur. S’il est le premier à se préparer pour l’hiver, il retourne la tuile sur 2 feux et on remplace les Grosses Créatures, comme dans la règle de base. L’app te le rappelle à sa préparation pour l’hiver <i>(décision de Pascal, règle de base p.14)</i>.</li>
+    <li>Pat ne gagne <b>pas</b> de feu en se préparant pour la saison <i>(réponse du concepteur, BGG, juill. 2025)</i>.</li>
     <li>Été → automne (+1 ouvrier) → hiver (+1) → printemps (+2). Il se prépare quand tous ses ouvriers sont posés <b>et</b> que tu t’es préparé.</li>
+    <li>Jeton Pat sur une pile de doubles : tu peux en jouer une carte, le jeton reste sur le reste de la pile ; quand Pat se prépare (ou en fin de partie), il prend <b>toute la pile</b> face cachée (p.20).</li>
     <li>En se préparant, il prend face cachée les cartes de la Vallée qui portent un jeton Pat. Tu ajoutes la neige des Tempêtes (pas dans sa ville). Il pose un jeton Pat sur la Forge partagée (automne) et sur la Guilde partagée (hiver) : tu lui donnes ton feu quand tu y vas.</li>
     <li>Printemps : il passe quand tous ses ouvriers sont posés et que sa ville a au moins 15 cartes. À 17 cartes, il ignore les cases 🃏.</li></ul>
   <h3>Score</h3><ul>
     <li>Cartes, quêtes ${scrollIcon('plaine')}${scrollIcon('montagne')}, jetons Point, Voyages, 1 par neige (+5 s’il en a le plus), et les bonus du niveau. En cas d’égalité, Pat gagne.</li></ul>
-  <h3>Choix de l’app <span class="flag">à confirmer</span></h3><ul>
-        <li>Jeton Pat sur une pile de doubles : en se préparant, Pat ne prend que la carte du dessus.</li>
-    <li>Don au joueur à ta gauche (Pat) : le feu reste chez lui, une carte va face cachée, toute autre ressource retourne à la réserve.</li>
-    <li>Niveau 4 : pile de 3 ${scrollIcon('plaine')} + 2 ${scrollIcon('montagne')} (5 quêtes, livret Silverfrost p.17).</li>
-    <li>Tactiques : pas de rebouclage par défaut (option dans les réglages). Au bout de la liste, Pat joue la carte du coin (+1 neige).</li>
-    <li>« Balise ? » de la carte Tactiques : on prend la valeur de balise du Complot en cours.</li>
-    <li>Guilde sans quête possible (pile vide, aucune ${scrollIcon('montagne')}) : l’ouvrier se déplace avec la carte Tactiques.</li>
-    <li>Printemps, tous les ouvriers posés et moins de 15 cartes : les cases 🐾 deviennent des cartes (+1 neige).</li>
-    <li>Ouvriers de départ en été : réglable (2 par défaut, la p.6 n’a pas été numérisée).</li>
-    <li>Fureur de l’hiver déclenchée par Pat : non traitée par les règles, à toi de décider.</li></ul>
   </section>
   ${rulesSection()}`;
 }
@@ -686,11 +681,9 @@ function bind() {
   bindCampaign(campCtx);
   if (!S) {
     document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('click', () => { setupDraft.level = Number(b.dataset.level); readSetup(); render(); }));
-    $('[name="loop"]')?.addEventListener('change', readSetup);
-    $('[name="startWorkers"]')?.addEventListener('change', readSetup);
     $('#btn-start')?.addEventListener('click', () => {
       readSetup();
-      S = newGame({ level: setupDraft.level, loopTactiques: setupDraft.loop, startWorkers: setupDraft.startWorkers });
+      S = newGame({ level: setupDraft.level });
       history = [];
       scoreInputs = { cardPoints: 0, mostSnow: false, human: 0, questPoints: null };
       showChecklist = true; tab = 'tour'; save(); render();
@@ -740,8 +733,6 @@ function bind() {
   }
 }
 function readSetup() {
-  setupDraft.loop = checked('loop');
-  setupDraft.startWorkers = Math.max(1, val('startWorkers') || 2);
 }
 const campCtx = {
   S: () => S,
@@ -750,7 +741,7 @@ const campCtx = {
   toast,
   finalScores,
   startGame(gc) {
-    S = newGame(gameOptions(camp.c, { loopTactiques: setupDraft.loop, startWorkers: setupDraft.startWorkers }));
+    S = newGame(gameOptions(camp.c));
     S.campaign = gc;
     history = [];
     scoreInputs = { cardPoints: 0, mostSnow: false, human: 0, questPoints: null };
@@ -809,7 +800,6 @@ $('#btn-voice-test').addEventListener('click', () => {
 });
 unlockOnFirstGesture();
 if (speechSupported()) window.speechSynthesis.addEventListener?.('voiceschanged', () => { if ($('#settings').open) syncVoiceUI(); });
-$('#opt-loop').addEventListener('change', (e) => { if (S) act((s) => { s.opts.loopTactiques = e.target.checked; }); });
 $('#btn-new').addEventListener('click', confirmNew);
 
 render();

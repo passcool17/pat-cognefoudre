@@ -168,18 +168,24 @@ export const EPILOGUE = [
   '« Mais nous serons là pour déblayer la neige. Pour qu’ils se souviennent : ce royaume est le nôtre, pour bien des hivers encore. » — Lepus Longear',
 ];
 
-// Choix d'interprétation à afficher (onglet Règles). La campagne ne tranche pas ces points.
-export const INTERPRETATIONS = [
-  'Les quêtes « bleues » de la campagne sont les Quêtes en montagne (publiques), les « vertes » les Quêtes en plaine.',
-  'Année 1 : au printemps, tu gagnes ton garde forestier + 1 ouvrier normal (les 2 ouvriers de la saison).',
-  'Années 2 et 4 : tu commences avec 1 garde forestier, 1 ouvrier normal et l’apprenti (3 figurines).',
-  'Année 2 : un réfugié qui rejoint les bandits devient tout de suite un ouvrier normal de Pat, utilisable dès cette saison. En fin de partie, il ne compte que pour le −5.',
-  'Année 3 : « un de ses propres objectifs » = la quête du haut de la pile Quête de Pat.',
-  'Année 3 : la neige d’une carte face cachée prise par Pat va dans sa réserve, comme d’habitude.',
-  'Année 3 : la campagne ne dit rien des jetons Pat. L’app garde l’ordre habituel sur les cartes face visible et, s’il n’y en a aucune, applique l’ordre des cartes face cachée.',
-  'Année 4 : les bandits ne touchent que toi. Pat n’en reçoit pas et n’en chasse pas.',
-  'Pas de score cumulé : seule compte la victoire de chaque année.',
-  'Les noms des Grosses Créatures sont ceux de la campagne (anglais) ; la VF des cartes n’a pas été vérifiée.',
+// Précisions de la campagne, vérifiées dans le texte d'Otto Gregor (The Year of the Rabbit) et le livret Silverfrost.
+export const PRECISIONS = [
+  'Les quêtes « bleues » de la campagne sont les Quêtes en montagne (publiques, 3 à 2 joueurs), les « vertes » les Quêtes en plaine (on en pioche 2, on en garde 1) : campagne, Année 1 ; livret p.6.',
+  'Année 1 : ton garde forestier est l’un de tes 2 nouveaux ouvriers du printemps (campagne, Année 1 ; livret p.6 : 2 ouvriers au printemps).',
+  'Années 2 et 4 : tu commences avec 1 garde forestier, 1 ouvrier normal et l’apprenti, soit 3 figurines (campagne, Années 2 et 4).',
+  'Année 2 : un réfugié qui rejoint les bandits va dans la réserve d’ouvriers de Pat : il le pose comme ouvrier normal, son garde forestier toujours en dernier. En fin de partie, il ne compte que pour le −5 (campagne, Année 2 ; livret p.19).',
+  'Année 3 : « un de ses propres objectifs » = la quête du haut de la pile Quête de Pat (campagne, Année 3 ; livret p.17 et p.19).',
+  'Année 3 : la neige d’une carte face cachée prise par Pat va dans sa réserve (campagne, Année 3 : « add it to his pool »).',
+  'Année 4 : les bandits arrivent avec la neige de <b>ta</b> ville ; Pat n’a jamais de neige dans sa ville, donc il ne reçoit pas de bandits (campagne, Année 4 ; livret p.21).',
+  'Année 4 : un bandit sur un lieu du plateau où Pat envoie un ouvrier est traité exactement comme la neige : Pat le chasse gratuitement, le bandit retourne dans la réserve de bandits, sans butin pour personne (campagne, Année 4 : « Bandits work exactly like snow » ; livret p.19 : Pat déblaie la neige gratuitement).',
+  'Pas de score cumulé : il faut battre Pat chaque année pour passer à la suivante, sinon on la rejoue (campagne, « How to win and progress »).',
+  'Les noms des Grosses Créatures sont ceux de la campagne (en anglais).',
+];
+
+// Cas que ni la campagne ni le livret ne tranchent : l'app applique ce choix en attendant la décision de PassCool_17.
+// Décisions de Pascal pour les cas que la campagne ne tranche pas.
+export const DECISIONS = [
+  'Année 3 : jeton Pat dans la brume. On garde l’ordre habituel sur les cartes face visible ; s’il n’y en a aucune, on applique l’ordre des cartes face cachée (décision de Pascal ; le livret p.20 utilise le même ordre que pour jouer une carte de la Vallée).',
 ];
 
 // ---------- état de campagne (carnet) ----------
@@ -233,6 +239,12 @@ export function activateCritter(gc) {
 export function guildGoalDone(gc) {
   if (gc.year === 1 && !gc.faceUp) gc.faceUp = true;
   return gc;
+}
+
+// Année 4 : consigne pour un bandit sur le lieu où Pat pose un ouvrier (traité comme la neige).
+export function banditPlaceNote(s) {
+  if (s?.campaign?.year !== 4) return '';
+  return 'Année 4 : un bandit sur ce lieu ? Comme pour la neige, Pat le chasse gratuitement : remets-le dans la réserve de bandits. Pas de butin.';
 }
 
 // Année 2 : un réfugié rejoint les bandits. s = état de partie (logic.js).
