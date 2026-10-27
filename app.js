@@ -9,8 +9,9 @@ import { MOODS, TIMING, computeMood, happiness, newPet, pickLine } from './pet.j
 import {
   voiceSettings, saveVoice, speak, stopSpeaking, unlockOnFirstGesture, currentVoice, speechSupported,
 } from './voice.js';
+import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -115,6 +116,8 @@ function render() {
   if (rendering) return;
   rendering = true;
   try { document.activeElement?.blur?.(); renderNow(); } finally { rendering = false; }
+  const fig = $('#pet');
+  if (fig) mountAvatar(fig.querySelector('.pet-body'), fig.dataset.mood);
   petSync();
   petFinalReact();
 }
@@ -383,8 +386,7 @@ function currentMood() {
 function petFigure(mood, small = false) {
   const flakes = Array.from({ length: 7 }, (_, i) => `<i style="--x:${8 + i * 13}%;--d:${4 + (i % 3) * 1.3}s;--l:-${(i * 0.9) % 4.5}s">❄</i>`).join('');
   return `<button type="button" class="pet ${small ? 'small' : ''}" id="pet" data-mood="${mood}" aria-label="Toucher Pat pour qu’il parle">
-      <span class="pet-body"><img src="img/lynx.jpg" alt="Pat Cognefoudre, le lynx Roi des Bandits">
-      <span class="lid l1"></span><span class="lid l2"></span></span>
+      <span class="pet-body" role="img" aria-label="Pat Cognefoudre, le lynx Roi des Bandits"></span>
       <span class="pet-flakes" aria-hidden="true">${flakes}</span>
     </button>`;
 }
@@ -452,7 +454,7 @@ function petSay() {
     md.querySelector('.mood-label').textContent = m.label;
   }
   const fig = $('#pet');
-  if (fig) { fig.dataset.mood = mood; fig.classList.add('talking'); }
+  if (fig) { fig.dataset.mood = mood; fig.classList.add('talking'); setAvatarMood(mood); avatarTalk(true); }
   clearTimeout(petCtl.talkTimer);
   const minMs = Math.max(1800, line.text.length * 55);
   const t0 = Date.now();
@@ -461,7 +463,7 @@ function petSay() {
   }) ? 1 : 0);
   if (!voiceSettings.on || !speechSupported()) petCtl.talkTimer = setTimeout(stopTalking, minMs);
 }
-function stopTalking() { $('#pet')?.classList.remove('talking'); }
+function stopTalking() { $('#pet')?.classList.remove('talking'); avatarTalk(false); }
 function syncVoiceUI() {
   $('#opt-voice').checked = !!voiceSettings.on;
   $('#opt-volume').value = String(voiceSettings.volume);

@@ -19,10 +19,11 @@ Fonctionne hors ligne une fois ouverte.
 - **iPhone / iPad (Safari)** : ouvre le lien, bouton Partager → *Sur l’écran d’accueil*.
 
 ## Pat, compagnon de jeu
-Pendant ton tour, Pat le roi bandit reste à l’écran : il respire, cligne des yeux, penche la tête et fait tomber la neige.
+Pendant ton tour, Pat le roi bandit reste à l’écran, sans cadre, fondu dans la neige : une courte vidéo en boucle par humeur (ajuste sa couronne, tapote son marteau, tape du pied, bâille sous la neige, brandit son marteau, croise les bras), et sa gueule s’ouvre quand il parle.
 - **Il parle** au début de ton tour, parfois pendant (≈ 20-30 s, une fois sur quatre il se tait), puis s’impatiente si tu prends ton temps (50 s, puis toutes les 75 s). Touche Pat ou *Parler* pour une réplique.
 - **Son humeur suit la partie** : 😼 Content de lui, 😾 Grognon (bloqué ce tour-ci ou partie difficile), ⏳ Impatient, 😴 Endormi (hiver), 👑 Triomphant, 🙄 Boudeur (à la fin, selon les scores). 96 répliques, 16 par humeur, sans répétition tant qu’une liste n’est pas épuisée.
 - **Voix** : synthèse vocale de l’appareil (fr-CA de préférence, sinon fr-FR), grave et un peu lente. Réglages dans ⚙️ (activer, volume, tester) ; bouton 🔊/🔇 sous Pat. La bulle s’affiche toujours, même en muet ou hors ligne. Sur iPhone, la voix se débloque au premier toucher.
+- **Bouche** : dessinée par-dessus la vidéo (canvas) et calée sur le museau image par image (`avatar-tracks.js`). Avec une voix enregistrée, elle suit le volume réel (Web Audio, `AnalyserNode`) ; avec la synthèse vocale ou en muet, elle bouge en rythme minuté. Mouvement réduit (réglage système) : image fixe, seule la bouche bouge.
 - L’humeur est une invention de l’app (elle ne change aucune règle) ; elle est enregistrée avec la partie et suit *Annuler*.
 
 ## Interprétations (à confirmer)
@@ -42,5 +43,10 @@ npm test            # tests de la logique (node --test)
 npm run serve       # serveur local
 npm run test:e2e    # parties complètes dans Chrome (téléphone + tablette), BASE_URL=http://localhost:8765/
 npm run test:pet-e2e  # compagnon : réplique, toucher, minuterie (horloge simulée), muet, réglages voix
+npm run test:realiste-e2e  # Pat réaliste : vidéo par humeur, bouche minutée et audio, mouvement réduit
 ```
+### Pat réaliste
+- `video/pat-<humeur>.webm|mp4|jpg` : boucles de 5-6 s (VP9 + H.264, 600×800), image d’attente. Le service worker met en cache le format lu par l’appareil et répond aux requêtes « Range » (Safari).
+- `tools/realiste/track.py` et `build_tracks.py` (OpenCV) : suivi du museau dans chaque vidéo → `avatar-tracks.js`.
+- Brancher une voix enregistrée : au début de la lecture, `window.dispatchEvent(new CustomEvent('pat:audio', { detail: audio }))` (élément `<audio>` de même origine).
 Les images de cartes ne sont pas incluses : les cartes sont encodées comme données.
