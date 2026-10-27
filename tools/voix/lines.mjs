@@ -11,6 +11,10 @@ export function forSpeech(text) {
     .replace(/\s*[Zz]zz…?/g, '…')
     .replace(/Cognefoudre/g, 'Cogne-foudre')
     .replace(/Roi des Bandits/g, 'roi des bandits') // la majuscule fait buter la voix
+    .replace(/Tap\. Tap\. Tap\./g, 'Tape, tape, tape.') // « Tap. » isolé fait bafouiller la voix (gilles)
+    .replace(/Mon Plan/g, 'mon plan')
+    .replace(/Mes coffres débordent de neige : /g, 'Mes coffres, débordent de neige. ') // sinon « mes confres »
+    .replace(/Mes moustaches gèlent/g, 'Mes moustaches, gèlent')
     .replace(/[.…]*…[.…]*/g, '…')
     .replace(/^…\s*/, '')
     .trim();

@@ -1,4 +1,4 @@
-const CACHE = 'pat-cognefoudre-v4';
+const CACHE = 'pat-cognefoudre-v5';
 const ASSETS = [
   './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'pet.js', 'voice.js', 'audio/liste.js', 'audio/liste.json', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'img/lynx.jpg',

@@ -22,7 +22,7 @@ Fonctionne hors ligne une fois ouverte.
 Pendant ton tour, Pat le roi bandit reste à l’écran : il respire, cligne des yeux, penche la tête et fait tomber la neige.
 - **Il parle** au début de ton tour, parfois pendant (≈ 20-30 s, une fois sur quatre il se tait), puis s’impatiente si tu prends ton temps (50 s, puis toutes les 75 s). Touche Pat ou *Parler* pour une réplique.
 - **Son humeur suit la partie** : 😼 Content de lui, 😾 Grognon (bloqué ce tour-ci ou partie difficile), ⏳ Impatient, 😴 Endormi (hiver), 👑 Triomphant, 🙄 Boudeur (à la fin, selon les scores). 96 répliques, 16 par humeur, sans répétition tant qu’une liste n’est pas épuisée.
-- **Voix enregistrée** : chaque réplique est un petit mp3 (`audio/`, ≈ 3,3 Mo au total) généré hors ligne avec Piper (voix française « tom »), baissée de 3 demi-tons, avec un peu de chaleur et d’écho. Elle marche dans tous les navigateurs (Brave sous Linux compris) et hors ligne : le service worker garde les fichiers en cache. Si un fichier manque, la synthèse vocale de l’appareil prend le relais (fr-CA, sinon fr-FR). Réglages dans ⚙️ (activer, volume, tester) ; bouton 🔊/🔇 sous Pat. La bulle s’affiche toujours. La lecture se débloque au premier toucher (iPhone, Brave).
+- **Voix enregistrée** : chaque réplique est un petit mp3 (`audio/`, ≈ 3,3 Mo au total) généré hors ligne avec Piper (voix française « gilles », plus rauque), baissée de 2 demi-tons, avec un peu de chaleur et d’écho. Chaque réplique est vérifiée par reconnaissance vocale (faster-whisper) : celles mal comprises sont régénérées (meilleure de plusieurs prises) et quelques-unes sont écrites autrement pour la voix seulement (virgules, « Tape, tape, tape »), la bulle ne change pas. Elle marche dans tous les navigateurs (Brave sous Linux compris) et hors ligne : le service worker garde les fichiers en cache. Si un fichier manque, la synthèse vocale de l’appareil prend le relais (fr-CA, sinon fr-FR). Réglages dans ⚙️ (activer, volume, tester) ; bouton 🔊/🔇 sous Pat. La bulle s’affiche toujours. La lecture se débloque au premier toucher (iPhone, Brave).
 - **Répliques avec un nombre** : une version audio par valeur plausible (cartes 3 à 30, neige 2 à 25, jetons 2 à 10). En dessous ou au-dessus, la réplique n’est pas proposée (jamais « 0 cartes »). Singulier/pluriel gérés dans le texte. Les grognements écrits (« Grrr… », « Hmpf. ») sont dits « Hum… » à l’oral : la voix les épelait.
 - L’humeur est une invention de l’app (elle ne change aucune règle) ; elle est enregistrée avec la partie et suit *Annuler*.
 
@@ -46,7 +46,9 @@ npm run test:pet-e2e  # compagnon : réplique, toucher, minuterie (horloge simul
 ```
 Régénérer les voix (après avoir modifié une réplique dans `pet.js`) :
 ```
-tools/voix/build.sh [tom|gilles|pierre]   # Piper + ffmpeg (rubberband) ; écrit audio/*.mp3, audio/liste.js et audio/liste.json
+tools/voix/build.sh [gilles|tom|pierre]   # Piper + ffmpeg (rubberband) ; gilles par défaut ; écrit audio/*.mp3, audio/liste.js et audio/liste.json
+node tools/voix/lines.mjs > /tmp/lignes.json
+tools/voix/best.py --lines /tmp/lignes.json --audio audio   # optionnel (pip install faster-whisper) : refait les répliques mal comprises
 ```
 Puis augmenter `CACHE` dans `sw.js` pour que les téléphones récupèrent les nouveaux fichiers.
 

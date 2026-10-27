@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Régénère toutes les répliques audio de Pat (Piper, hors ligne) dans audio/.
 # Prérequis : venv avec piper-tts (PIPER_PY), voix dans $PIPER_VOICES, ffmpeg avec rubberband.
-# Usage : tools/voix/build.sh [preset]   (tom par défaut ; voir tools/voix/render.py)
+# Usage : tools/voix/build.sh [preset]   (gilles par défaut ; voir tools/voix/render.py)
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 PY=${PIPER_PY:-/workspace/tts-venv/bin/python}
-PRESET=${1:-tom}
+PRESET=${1:-gilles}
 JOBS=${JOBS:-4}
 TMP=$(mktemp -d)
 node tools/voix/lines.mjs > "$TMP/lines.json"

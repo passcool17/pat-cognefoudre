@@ -10,7 +10,7 @@ import {
   voiceSettings, saveVoice, speak, stopSpeaking, unlockOnFirstGesture, currentVoice, speechSupported, recordedCount,
 } from './voice.js';
 
-export const VERSION = '1.2.0';
+export const VERSION = '1.2.1';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';

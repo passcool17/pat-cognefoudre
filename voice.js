@@ -43,6 +43,8 @@ function setupWebAudio() {
     actx = new AC();
     gain = actx.createGain();
     actx.createMediaElementSource(audioEl).connect(gain).connect(actx.destination);
+    // Graphe partagé : un élément audio n'accepte qu'une seule source Web Audio ; l'avatar s'y branche.
+    audioEl.__patGraph = { ctx: actx, node: gain };
   } catch { actx = null; gain = null; }
   applyVolume();
 }
@@ -59,6 +61,8 @@ function playFile(id, my, onEnd, fallback) {
   applyVolume();
   if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
   const p = a.play();
+  // Annonce le fichier qui démarre (bouche de l'avatar synchronisée sur la voix).
+  try { window.dispatchEvent(new CustomEvent('pat:audio', { detail: a })); } catch { /* vieux navigateur */ }
   if (p && p.catch) p.catch((err) => {
     if (err && err.name === 'AbortError') return; // remplacé par une autre réplique
     if (!settled && my === token) { settled = true; fallback(); }
