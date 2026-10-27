@@ -18,6 +18,12 @@ Fonctionne hors ligne une fois ouverte.
 - **Android (Chrome)** : ouvre le lien, menu ⋮ → *Installer l’application* (ou *Ajouter à l’écran d’accueil*).
 - **iPhone / iPad (Safari)** : ouvre le lien, bouton Partager → *Sur l’écran d’accueil*.
 
+## Plein écran
+
+- Bouton ⛶ en haut à droite (à côté des réglages) : plein écran dans Brave, Chrome, Firefox, Android. Si tu l’avais activé, l’app propose « Revenir en plein écran » à la réouverture (le navigateur exige un toucher).
+- App installée : elle s’ouvre directement sans barres (`display: fullscreen`), le bouton est alors masqué.
+- iPhone : Safari ne permet pas le plein écran d’une page ; ajoute l’app à l’écran d’accueil (Partager → Sur l’écran d’accueil) pour l’ouvrir sans barres.
+
 ## Pat, compagnon de jeu
 Pendant ton tour, Pat le roi bandit reste à l’écran, sans cadre, fondu dans la neige : une courte vidéo en boucle par humeur (ajuste sa couronne, tapote son marteau, tape du pied, bâille sous la neige, brandit son marteau, croise les bras), et sa gueule s’ouvre quand il parle.
 - **Il parle** au début de ton tour, parfois pendant (≈ 20-30 s, une fois sur quatre il se tait), puis s’impatiente si tu prends ton temps (50 s, puis toutes les 75 s). Touche Pat ou *Parler* pour une réplique.
@@ -65,6 +71,7 @@ npm run test:e2e    # parties complètes dans Chrome (téléphone + tablette), B
 npm run test:campagne-e2e  # campagne complète (4 années, une défaite) sur téléphone et tablette
 npm run test:pet-e2e  # compagnon : réplique, toucher, minuterie (horloge simulée), muet, réglages voix, lecture audio réelle, secours synthèse
 npm run test:realiste-e2e  # Pat réaliste : vidéo par humeur, bouche minutée et audio, mouvement réduit
+npm run test:plein-ecran-e2e  # plein écran : bouton, bascule, retour proposé, API absente, app installée, astuce iPhone
 ```
 Régénérer les voix (après avoir modifié une réplique dans `pet.js`) :
 ```

@@ -13,9 +13,10 @@ import { MOODS, TIMING, TEST_LINE, computeMood, happiness, newPet, pickLine } fr
 import {
   voiceSettings, saveVoice, speak, stopSpeaking, unlockOnFirstGesture, currentVoice, speechSupported, recordedCount,
 } from './voice.js';
+import { initFullscreen } from './fullscreen.js';
 import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
 
-export const VERSION = '1.4.0';
+export const VERSION = '1.5.0';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -722,6 +723,7 @@ $('#tabs').addEventListener('click', (e) => {
   if (!b) return;
   tab = b.dataset.tab; render(); window.scrollTo(0, 0);
 });
+initFullscreen($('#btn-fullscreen'));
 $('#btn-settings').addEventListener('click', () => { $('#app-version').textContent = `Version ${VERSION}`; syncVoiceUI(); $('#settings').showModal(); });
 $('#opt-voice').addEventListener('change', (e) => setVoiceOn(e.target.checked));
 $('#opt-volume').addEventListener('input', (e) => { voiceSettings.volume = Number(e.target.value); saveVoice(); });
