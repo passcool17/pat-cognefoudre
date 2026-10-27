@@ -19,6 +19,9 @@ export const TIMING = {
   impatientAfter: 45000, // l'humeur passe à « impatient »
 };
 
+// Réplique du bouton « Tester la voix » (fichier audio/test.mp3).
+export const TEST_LINE = 'Grrr… Je suis Pat Cognefoudre, le Roi des Bandits. Tu m’entends bien ?';
+
 export const LINES = {
   content: [
     'Ha ! Ma ville grandit plus vite que la tienne. Normal, je suis le roi.',
@@ -27,13 +30,13 @@ export const LINES = {
     'Mon marteau et moi, on est très fiers de nous aujourd’hui.',
     'Joue, joue… Le Roi des Bandits t’accorde ce petit tour.',
     'Mon œil unique voit tout, et ce qu’il voit me plaît beaucoup.',
-    'J’ai déjà {city} cartes dans ma ville. Tu comptes encore les tiennes ?',
+    'J’ai déjà {city|carte|cartes} dans ma ville. Tu comptes encore les tiennes ?',
     'La forêt murmure mon nom. Enfin, je crois que c’est mon nom.',
     'Je ne paie jamais rien et tout est à moi. C’est ça, la royauté.',
     'Prends ton temps. Pas trop quand même, je suis généreux, pas patient.',
     'Mes gardes forestiers m’ont dit que tu étais impressionné. Ils ont raison.',
     'Un roi, ça ne sourit pas. Sauf aujourd’hui. Un tout petit peu.',
-    'J’ai {snow} neige dans mes coffres. La neige, c’est mon trésor.',
+    'Mes coffres débordent de neige : {snow} ! La neige, c’est mon trésor.',
     'Si tu veux des conseils, demande à quelqu’un d’autre. Moi je gagne.',
     'Je pourrais régner sur Silverfrost les yeux fermés. Enfin, l’œil.',
     'Tu sens ce petit vent froid ? C’est le parfum de ma victoire.',
@@ -49,7 +52,7 @@ export const LINES = {
     'Hmpf. Ma couronne est de travers et c’est de ta faute.',
     'On m’a volé mon lieu. Moi ! Le Roi des Bandits ! Volé !',
     'Je compte jusqu’à dix pour me calmer. Un, deux… non, ça marche pas.',
-    'J’ai déjà placé {tokens} jetons Pat. Tu vois dans quel état tu me mets ?',
+    'J’ai déjà placé {tokens|jeton Pat|jetons Pat}. Tu vois dans quel état tu me mets ?',
     'Ma fourrure se hérisse. C’est mauvais signe. Pour toi.',
     'Même mon œil unique est fatigué de voir ça.',
     'Je note tout dans mon grand livre des rancunes. Ton nom est en haut.',
@@ -160,20 +163,50 @@ export function computeMood(s, { elapsedMs = 0, final = null } = {}) {
 export function newPet() { return { used: {}, last: null, greetedTurn: null }; }
 
 // Choisit une réplique sans répétition tant que la liste de l'humeur n'est pas épuisée.
+// Valeur minimale pour qu'une réplique chiffrée ait du sens (pas de « 0 cartes » ni de vantardise à 1 neige).
+export const MIN_VALUE = { city: 3, snow: 2, tokens: 2 };
+// Valeur maximale enregistrée en audio (au-delà, la réplique n'est pas tirée).
+export const MAX_VALUE = { city: 30, snow: 25, tokens: 10 };
+
+export function values(s) {
+  return { city: s?.city ?? 0, snow: s?.snow ?? 0, tokens: s ? tokensUsed(s) : 0 };
+}
+
+// Une réplique est utilisable si chacun de ses nombres atteint son minimum.
+export function lineUsable(text, s) {
+  const v = values(s);
+  return [...text.matchAll(/\{(\w+)/g)].every(([, k]) => (v[k] ?? 0) >= (MIN_VALUE[k] ?? 0) && (v[k] ?? 0) <= (MAX_VALUE[k] ?? Infinity));
+}
+
+// Nom du fichier audio pré-enregistré d'une réplique : audio/<humeur>-<i>[-<nombre>].mp3
+export function audioId(mood, i, s) {
+  const text = (LINES[mood] || [])[i] || '';
+  const k = text.match(/\{(\w+)/)?.[1];
+  return k ? `${mood}-${i}-${values(s)[k]}` : `${mood}-${i}`;
+}
+
 export function pickLine(pet, mood, s, rnd = Math.random) {
   const pool = LINES[mood] || LINES.content;
+  const usable = pool.map((_, i) => i).filter((i) => lineUsable(pool[i], s));
   let used = pet.used[mood] || [];
-  if (used.length >= pool.length) used = pet.last && pet.last.mood === mood ? [pet.last.i] : [];
-  const free = pool.map((_, i) => i).filter((i) => !used.includes(i));
+  let free = usable.filter((i) => !used.includes(i));
+  if (!free.length) {
+    // Liste épuisée : on repart, sans redire tout de suite la dernière réplique.
+    used = pet.last && pet.last.mood === mood ? [pet.last.i] : [];
+    free = usable.filter((i) => !used.includes(i));
+    if (!free.length) free = usable;
+  }
   const i = free[Math.floor(rnd() * free.length) % free.length];
   pet.used[mood] = [...used, i];
   pet.last = { mood, i };
-  return { mood, i, text: fill(pool[i], s) };
+  return { mood, i, text: fill(pool[i], s), audio: audioId(mood, i, s) };
 }
 
+// {city} → « 7 » ; {city|carte|cartes} → « 1 carte » / « 7 cartes » (singulier pour 0 et 1, comme en français).
 export function fill(text, s) {
-  return text
-    .replace('{city}', String(s?.city ?? 0))
-    .replace('{snow}', String(s?.snow ?? 0))
-    .replace('{tokens}', String(s ? tokensUsed(s) : 0));
+  const v = values(s);
+  return text.replace(/\{(\w+)(?:\|([^|}]*)\|([^}]*))?\}/g, (_, k, one, many) => {
+    const n = v[k] ?? 0;
+    return one === undefined ? String(n) : `${n} ${n <= 1 ? one : many}`;
+  });
 }

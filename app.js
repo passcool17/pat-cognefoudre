@@ -5,12 +5,12 @@ import {
   newGame, startTurn, answer, adjust, setHumanPrepared, score, winner, workersLeft, patTokensFree,
   nextSeason, locKind, baliseOf, PLAN_BY_ID, COMPLOT_BY_ID,
 } from './logic.js';
-import { MOODS, TIMING, computeMood, happiness, newPet, pickLine } from './pet.js';
+import { MOODS, TIMING, TEST_LINE, computeMood, happiness, newPet, pickLine } from './pet.js';
 import {
-  voiceSettings, saveVoice, speak, stopSpeaking, unlockOnFirstGesture, currentVoice, speechSupported,
+  voiceSettings, saveVoice, speak, stopSpeaking, unlockOnFirstGesture, currentVoice, speechSupported, recordedCount,
 } from './voice.js';
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.1';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -456,10 +456,12 @@ function petSay() {
   clearTimeout(petCtl.talkTimer);
   const minMs = Math.max(1800, line.text.length * 55);
   const t0 = Date.now();
-  window.__petSpoken = (window.__petSpoken || 0) + (speak(line.text, () => {
+  const spoke = speak(line.text, () => {
+    clearTimeout(petCtl.talkTimer);
     petCtl.talkTimer = setTimeout(stopTalking, Math.max(0, minMs - (Date.now() - t0)));
-  }) ? 1 : 0);
-  if (!voiceSettings.on || !speechSupported()) petCtl.talkTimer = setTimeout(stopTalking, minMs);
+  }, line.audio);
+  window.__petSpoken = (window.__petSpoken || 0) + (spoke ? 1 : 0);
+  if (!spoke) { clearTimeout(petCtl.talkTimer); petCtl.talkTimer = setTimeout(stopTalking, minMs); }
 }
 function stopTalking() { $('#pet')?.classList.remove('talking'); }
 function syncVoiceUI() {
@@ -467,9 +469,12 @@ function syncVoiceUI() {
   $('#opt-volume').value = String(voiceSettings.volume);
   $('#opt-volume').disabled = !voiceSettings.on;
   const v = currentVoice();
-  $('#voice-status').textContent = !speechSupported()
-    ? 'Cet appareil ne propose pas de synthèse vocale : Pat parlera seulement dans sa bulle.'
-    : v ? `Voix utilisée : ${v.name} (${v.lang}), grave et un peu lente.` : 'Aucune voix française trouvée pour l’instant : Pat parlera dans sa bulle (et avec la voix par défaut si elle existe).';
+  const backup = !speechSupported() ? 'aucune' : v ? `${v.name} (${v.lang})` : 'voix par défaut de l’appareil';
+  $('#voice-status').textContent = recordedCount() > 0
+    ? `Voix enregistrée de Pat (${recordedCount()} répliques, fonctionne hors ligne). Secours : ${backup}.`
+    : !speechSupported()
+      ? 'Cet appareil ne propose pas de synthèse vocale : Pat parlera seulement dans sa bulle.'
+      : v ? `Voix utilisée : ${v.name} (${v.lang}), grave et un peu lente.` : 'Aucune voix française trouvée pour l’instant : Pat parlera dans sa bulle (et avec la voix par défaut si elle existe).';
   const mb = $('#btn-mute');
   if (mb) { mb.textContent = voiceSettings.on ? '🔊 Voix' : '🔇 Muet'; mb.setAttribute('aria-pressed', String(!voiceSettings.on)); }
 }
@@ -687,7 +692,7 @@ $('#opt-voice').addEventListener('change', (e) => setVoiceOn(e.target.checked));
 $('#opt-volume').addEventListener('input', (e) => { voiceSettings.volume = Number(e.target.value); saveVoice(); });
 $('#btn-voice-test').addEventListener('click', () => {
   if (!voiceSettings.on) setVoiceOn(true);
-  speak('Grrr… Je suis Pat Cognefoudre, le Roi des Bandits. Tu m’entends bien ?');
+  speak(TEST_LINE, () => {}, 'test');
 });
 unlockOnFirstGesture();
 if (speechSupported()) window.speechSynthesis.addEventListener?.('voiceschanged', () => { if ($('#settings').open) syncVoiceUI(); });
