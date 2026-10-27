@@ -106,7 +106,7 @@ test('Humain pas encore préparé : la case ouvrier devient une carte + 1 neige'
   assert.fail();
 });
 
-test('Garde forestier : +1 feu sauf si ton ouvrier est déjà là', () => {
+test('Garde forestier : +1 feu sauf si ton ouvrier est sur le lieu (livret Silverfrost p.19)', () => {
   const s = newGame({ level: 2, seed: 3, startWorkers: 0 });
   for (let i = 0; i < 50; i++) {
     startTurn(s);

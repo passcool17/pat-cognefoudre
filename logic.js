@@ -80,7 +80,7 @@ export function newGame({ level = 2, loopTactiques = false, startWorkers = 2, se
     workers: { normal: startWorkers, normalPlaced: 0, rangerPlaced: false },
     planDeck: [], planDiscard: [], complotDeck: [], complotDiscard: [],
     plan: null,
-    city: 0, violet: 0, faceDown: 0, fire: 0, snow: 0, points: 0,
+    city: 0, violet: 0, cityColors: { violet: 0, bleu: 0, rouge: 0, beige: 0, vert: 0 }, faceDown: 0, fire: 0, snow: 0, points: 0,
     quests: { count: 0, points: 0 },
     questPile: QUEST_PILE[level].plaine + QUEST_PILE[level].montagne,
     voyagePoints: 0,
@@ -203,7 +203,9 @@ function beginPlace(s, loc, via) {
   return s;
 }
 
-// Réponses possibles à 'place' : 'ok', 'blocked', 'sharedHuman' (garde forestier sur un lieu où se trouve ton ouvrier)
+// Réponses possibles à 'place' : 'ok', 'blocked', 'occupied' (garde forestier sur un lieu où se trouve ton ouvrier :
+// pas de feu, livret Silverfrost p.19). 'sharedHuman' est l'ancien nom de 'occupied' (anciennes sauvegardes, tests).
+export const RANGER_OCCUPIED = ['occupied', 'sharedHuman'];
 function resolvePlace(s, choice, { snow = false } = {}) {
   const p = s.pending;
   if (choice === 'blocked') {
@@ -213,7 +215,7 @@ function resolvePlace(s, choice, { snow = false } = {}) {
   }
   const placed = { loc: p.loc, worker: p.worker, fire: 0, snow: snow ? 1 : 0 };
   if (p.worker === 'normal') s.workers.normalPlaced += 1; else s.workers.rangerPlaced = true;
-  if (p.worker === 'ranger' && choice !== 'sharedHuman') placed.fire += 1;
+  if (p.worker === 'ranger' && !RANGER_OCCUPIED.includes(choice)) placed.fire += 1;
   if (p.loc === 'forge') placed.fire += 1;
   s.fire += placed.fire;
   s.snow += placed.snow;
@@ -293,8 +295,11 @@ function resolveCard(s, { color, snow = false, patToken = false } = {}) {
   if (snow) s.snow += 1;
   if (p.replaced) s.snow += 1;
   if (patToken && s.patTokensVallee > 0) s.patTokensVallee -= 1;
+  s.cityColors = cityColors(s);
+  s.cityColors[color] = (s.cityColors[color] || 0) + 1;
   s.cur.played = { color, src: p.src };
   log(s, `Pat joue une carte ${color} (${p.src === 'pile' ? 'pile principale' : 'Vallée'})${p.replaced ? ', +1 neige (remplacement)' : ''}${snow ? ', +1 neige déblayée' : ''}. Ville : ${s.city}.`);
+  if (color === 'rouge') log(s, 'Carte rouge : son lieu principal est réservé à Pat (il ne l’utilise pas). Si c’est une Créature rouge, tu peux visiter son lieu Communauté : +1 point pour Pat.');
   return finishAction(s);
 }
 
@@ -362,7 +367,7 @@ export function answer(s, choice, data = {}) {
     case 'guildQuest':
       if (choice === 'mountain') {
         s.quests.count += 1; s.quests.points += Number(data.points) || 0;
-        log(s, `Guilde : Pat réalise une Quête en montagne (${Number(data.points) || 0} pts).`);
+        log(s, `Guilde : Pat réalise une Quête en montagne (${Number(data.points) || 0} pts). Il est le premier : elle n’est plus disponible pour toi.`);
         return finishAction(s);
       }
       if (s.questPile > 0) { s.pending = { kind: 'pileQuest', remaining: s.questPile }; return s; }
@@ -403,6 +408,29 @@ export function answer(s, choice, data = {}) {
     default:
       throw new Error(`Étape inconnue : ${p.kind}`);
   }
+}
+
+// Cartes de la ville de Pat par couleur (connues seulement pour celles jouées depuis la v1.7.0).
+export function cityColors(s) {
+  const c = { violet: 0, bleu: 0, rouge: 0, beige: 0, vert: 0, ...(s.cityColors || {}) };
+  return c;
+}
+
+// Résumé Silverfrost : certaines cartes te font donner un objet au joueur à ta gauche. En solo, c'est Pat.
+// Feu : il le garde (bonus de niveau). Carte : face cachée chez Pat. Autre ressource : retour à la réserve
+// (Pat ne garde aucune ressource). Interprétation de l'app.
+export const GIFT_KINDS = ['feu', 'carte', 'ressource'];
+// Livret Silverfrost : on ne donne rien à un joueur qui a passé (en solo : défausse / réserve). Pat n'a pas de main
+// (p.17) : une carte donnée va face cachée chez lui (p.21), donc sans limite de 8 cartes.
+export function giveToPat(s, kind, n = 1) {
+  if (!GIFT_KINDS.includes(kind)) throw new Error(`Don inconnu : ${kind}`);
+  n = Math.max(1, Number(n) || 1);
+  const what = kind === 'feu' ? `${n} feu` : kind === 'carte' ? `${n} carte${n > 1 ? 's' : ''}` : `${n} ressource${n > 1 ? 's' : ''}`;
+  if (s.passed) { log(s, `Pat a passé : on ne peut plus rien lui donner. ${what} → défausse / réserve.`); return s; }
+  if (kind === 'feu') { s.fire += n; log(s, `Tu donnes ${n} feu à Pat (joueur à ta gauche).`); }
+  else if (kind === 'carte') { s.faceDown += n; log(s, `Tu donnes ${what} à Pat : face cachée chez lui.`); }
+  else log(s, `Tu donnes ${what} à Pat : retour à la réserve (Pat ne garde pas de ressources).`);
+  return s;
 }
 
 // Ajustements manuels (événements causés par le joueur humain).

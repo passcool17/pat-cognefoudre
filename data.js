@@ -57,7 +57,7 @@ export const TACTIQUES = ['forge', 'bouleau3', 'mousse2', 'cuivre1', 'gland2', '
 export const COLORS = {
   violet: { label: 'violette (Prospérité)', short: 'Violet', hex: '#7b4fa8' },
   bleu: { label: 'bleue (Gouvernance)', short: 'Bleu', hex: '#3a76b8' },
-  rouge: { label: 'rouge (Destination)', short: 'Rouge', hex: '#b8322f' },
+  rouge: { label: 'rouge (Destination, lieu exclusif)', short: 'Rouge', hex: '#b8322f' },
   beige: { label: 'beige (Voyageur)', short: 'Beige', hex: '#a8946a' },
   vert: { label: 'verte (Production)', short: 'Vert', hex: '#4f9a45' },
 };
