@@ -1,4 +1,4 @@
-const CACHE = 'pat-cognefoudre-v10';
+const CACHE = 'pat-cognefoudre-v11';
 const MOODS = ['content', 'grognon', 'impatient', 'endormi', 'triomphant', 'boudeur'];
 const ASSETS = [
   './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'pet.js', 'voice.js', 'audio/liste.js', 'audio/liste.json', 'avatar.js', 'manifest.webmanifest',

@@ -96,7 +96,7 @@ Si tu modifies une réplique dans `pet.js`, il faut redemander le mp3 au bot Voi
 - `music.js` lit le fichier décodé en Web Audio (`AudioBufferSourceNode` en boucle, en sautant le silence ajouté par l’encodeur) et règle le volume avec un `GainNode` (rampes). Sans Web Audio : élément `<audio loop>`.
 
 ### Pat peint (vidéos)
-- `video/pat-<humeur>-repos|parle.webm|mp4` : boucles de Créa (4,5 s, 24 i/s) réduites en 540×720, VP9 + H.264 ; `video/pat-<humeur>.jpg` : image fixe. Réencoder : `tools/anim/encode.sh` (ffmpeg).
+- `video/pat-<humeur>-repos|parle.webm|mp4` : boucles de Créa, série v3 (œil gauche aveugle et balafré ; 4,5 s, 24 i/s) réduites en 540×720, VP9 + H.264 ; `video/pat-<humeur>.jpg` : image fixe. Réencoder : `tools/anim/encode.sh /workspace/shared/voix-pat/anim/v3` (ffmpeg).
 - Hors ligne sans tout télécharger d’un coup : à l’installation, le service worker garde l’app, les voix et les images fixes ; il ajoute ensuite le couple repos/parle de « content » dans le format lu par l’appareil, puis chaque boucle au moment où elle est lue la première fois. Il répond aux requêtes « Range » (Safari).
 - `voice.js` émet `pat:voix` (`{ on: true|false }`) au début et à la fin d’une réplique audio (chaîne comprise) ; `avatar.js` passe alors en « parle » ou en « repos ».
 

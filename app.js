@@ -17,7 +17,7 @@ import { initFullscreen } from './fullscreen.js';
 import { initMusic, musicSettings, setMusicOn, setMusicVolume } from './music.js';
 import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
 
-export const VERSION = '1.6.1';
+export const VERSION = '1.6.2';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
