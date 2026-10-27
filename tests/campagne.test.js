@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   newCampaign, chooseAlly, startYear, activateCritter, guildGoalDone, refugeeJoinsPat, humanPenalty, humanFinal,
   refugeesToFeed, nextReminder, dismissReminder, recordResult, gameOptions, yearStatus, needsAlly, setLevel,
-  YEARS, ALLIES, CRITTERS, PRECISIONS, CAS_NON_PREVUS, CREDITS,
+  YEARS, ALLIES, CRITTERS, PRECISIONS, DECISIONS, CREDITS, banditPlaceNote,
 } from '../campagne.js';
 import { newGame, startTurn, answer, workersLeft, setHumanPrepared } from '../logic.js';
 import { makeRng, playGame, respond } from './sim.js';
@@ -17,8 +17,11 @@ test('données : 4 années complètes, alliés et créatures connus', () => {
   assert.equal(YEARS[2].patRules.length, 3);
   for (const a of Object.values(ALLIES)) { assert.ok(CRITTERS[a.critter]); assert.ok(CRITTERS[a.other]); }
   assert.ok(PRECISIONS.length >= 8);
-  assert.equal(CAS_NON_PREVUS.length, 2);
-  for (const t of [...PRECISIONS, ...CAS_NON_PREVUS]) assert.ok(!/à confirmer/.test(t), t);
+  assert.equal(DECISIONS.length, 1);
+  assert.match(DECISIONS[0], /brume/);
+  assert.match(DECISIONS[0], /décision de Pascal/);
+  assert.ok(PRECISIONS.some((t) => /exactly like snow/.test(t)));
+  for (const t of [...PRECISIONS, ...DECISIONS]) assert.ok(!/à confirmer/.test(t), t);
   assert.match(CREDITS.author, /Otto Gregor/);
   assert.match(CREDITS.url, /^https:\/\/boardgamegeek\.com\//);
 });
@@ -176,7 +179,7 @@ test('année 3 : options de partie en mode brume', () => {
   const c = newCampaign({ level: 2 });
   assert.deepEqual(gameOptions(c), { level: 2, mist: false });
   c.year = 3;
-  assert.deepEqual(gameOptions(c, { loopTactiques: true }), { loopTactiques: true, level: 2, mist: true });
+  assert.deepEqual(gameOptions(c, { seed: 5 }), { seed: 5, level: 2, mist: true });
 });
 
 test('année 3 (moteur) : Vallée, Balise, Guilde et jeton Pat marqués « brume », pas la PILE', () => {
@@ -204,4 +207,16 @@ test('hors année 3 : aucune étape marquée « brume », et même déroulé qu�
     assert.equal(a.city, b.city);
     assert.deepEqual(a.log.map((l) => l.msg), b.log.map((l) => l.msg));
   }
+});
+
+test('année 4 : bandit sur le lieu de Pat traité comme la neige (chassé gratuitement, sans butin)', () => {
+  const s = newGame({ level: 2, seed: 4 });
+  assert.equal(banditPlaceNote(s), '');
+  s.campaign = { year: 3, refugeesLost: 0, reminders: [] };
+  assert.equal(banditPlaceNote(s), '');
+  s.campaign.year = 4;
+  const t = banditPlaceNote(s);
+  assert.match(t, /gratuitement/);
+  assert.match(t, /réserve de bandits/);
+  assert.match(t, /Pas de butin/);
 });

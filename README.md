@@ -10,7 +10,7 @@ Application web (PWA) en français qui remplace les cartes Plan, Complot et Tact
 - **Suivi** : ouvriers, jetons Pat, feu, neige, ville, cartes face cachée, journal, corrections manuelles.
 - **Annuler**, sauvegarde automatique sur l’appareil, nouvelle partie (⚙️).
 - **Score** de Pat avec les bonus du niveau ; en cas d’égalité, Pat gagne.
-- **Règles** : ① la base Everdell, ② ce que *Silverfrost* change (résumé), ③ le mode solo de Pat par-dessus, les précisions du livret (avec les pages) et les cas non prévus.
+- **Règles** : ① la base Everdell, ② ce que *Silverfrost* change (résumé), ③ le mode solo de Pat par-dessus, les précisions du livret (avec les pages), les réponses du concepteur et les décisions de Pascal.
 
 Fonctionne hors ligne une fois ouverte.
 
@@ -76,11 +76,11 @@ D’après **The Year of the Rabbit** d’Otto Gregor (campagne non officielle, 
   - Année 2 : un réfugié qui rejoint les bandits va dans la réserve d’ouvriers de Pat (ouvrier normal, garde forestier toujours en dernier) ; en fin de partie, il ne compte que pour le −5 (campagne Année 2 ; livret p.19).
   - Année 3 : « un de ses propres objectifs » = la quête du haut de la pile Quête de Pat (campagne ; livret p.17 et p.19). La neige d’une carte face cachée prise par Pat va dans sa réserve (campagne).
   - Année 4 : les bandits arrivent avec la neige de ta ville ; Pat n’a jamais de neige dans sa ville, donc pas de bandits (campagne ; livret p.21).
+  - Année 4 : un bandit sur un lieu où Pat envoie un ouvrier est traité comme la neige : Pat le chasse gratuitement, il retourne dans la réserve de bandits, sans butin (campagne : « Bandits work exactly like snow » ; livret p.19). L’app le rappelle à l’étape « Pat place un ouvrier ».
   - Pas de score cumulé : il faut battre Pat chaque année (campagne).
   - Noms des Grosses Créatures : ceux de la campagne (en anglais).
-- Cas non prévus par la campagne (choix provisoire de l’app) :
+- Décision de Pascal :
   - Année 3 : jeton Pat dans la brume, ordre habituel sur les cartes face visible, sinon ordre des cartes face cachée.
-  - Année 4 : bandit en trop sur un lieu du plateau où Pat va : pas de consigne particulière.
 
 ## Précisions du livret (mode solo)
 - On lit le quart du Complot qui recouvre le coin du Plan en cours (schéma p.18).
@@ -90,11 +90,16 @@ D’après **The Year of the Rabbit** d’Otto Gregor (campagne non officielle, 
 - Guilde sans quête possible : la carte Tactiques déplace l’ouvrier, et un jeton Pat va dans la Vallée (p.19).
 - Plus d’ouvriers (au printemps aussi, tant qu’il a moins de 15 cartes) : les cases ouvrier deviennent des cartes (+1 neige) (p.19 et p.21).
 - Jeton Pat sur une pile de doubles : Pat prend toute la pile en se préparant ou en fin de partie (p.20).
-- Dons à Pat : il garde le feu, une carte va face cachée, toute autre ressource retourne à la réserve (p.19 et p.21).
+- Dons à Pat : il garde le feu (p.21), une carte va face cachée (p.20), toute autre ressource retourne à la réserve (p.19 et p.21).
 
-## Cas non prévus par le livret (choix provisoire)
-- Carte Tactiques au bout de la liste : pas de rebouclage par défaut (option dans ⚙️), Pat joue la carte du coin (+1 neige).
-- Fureur de l’hiver quand Pat se prépare le premier pour l’hiver : non traitée par l’app.
+## Réponses du concepteur (BGG, juill. 2025)
+Réponses de chris (@iomio, badge Designer) sur BoardGameGeek, 22 juillet 2025 :
+- Pat ne gagne pas de feu quand il se prépare pour la saison (l’app ne lui en donne pas).
+- Bout de la liste Tactiques (par exemple, ouvrier déjà sur la balise du bas) : c’est la flèche qui donne le sens sur la carte Tactiques, Pat ne joue pas de carte à la place. L’app suit la flèche du Plan ; arrivée au bout de la liste, elle repart du lieu bloqué dans l’autre sens. Seul cas restant : tous les lieux bloqués dans les deux sens (théorique). Pat joue alors une carte (+1 neige).
+- Leaf Ranger (« ton adversaire peut piocher une carte de la Vallée ») : la carte va face cachée chez Pat (bouton « il pioche » de l’onglet Suivi).
+
+## Décision de Pascal (règle de base p.14)
+- Fureur de l’hiver : Pat compte comme un joueur. S’il est le premier à se préparer pour l’hiver, il la déclenche : on retourne la tuile sur 2 feux et on remplace les Grosses Créatures visibles. L’app le rappelle à l’étape « Pat se prépare pour l’hiver ».
 
 ## Développement
 Vanilla HTML/CSS/JS, sans dépendance à l’exécution.

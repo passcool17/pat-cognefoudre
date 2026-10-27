@@ -1,7 +1,7 @@
 // Écrans de la campagne « L'année du Lapin » : carnet, introduction d'année, bandeau en jeu,
 // rappels de saison, fin d'année et épilogue. Le moteur de Pat reste celui de logic.js.
 import {
-  YEARS, ALLIES, CRITTERS, PROLOGUE, INTERLUDE, EPILOGUE, PRECISIONS, CAS_NON_PREVUS, CREDITS, PENALTY_REFUGEE,
+  YEARS, ALLIES, CRITTERS, PROLOGUE, INTERLUDE, EPILOGUE, PRECISIONS, DECISIONS, CREDITS, PENALTY_REFUGEE,
   newCampaign, chooseAlly, startYear, activateCritter, guildGoalDone, refugeeJoinsPat, humanPenalty,
   nextReminder, dismissReminder, recordResult, yearStatus, needsAlly, setLevel,
 } from './campagne.js';
@@ -217,7 +217,7 @@ export function scoreCampaignRows(S, humanRaw, humanTotal) {
 
 export function mistNote(kind) {
   const r = YEARS[2].patRules;
-  const txt = { card: r[0], balise: r[1], guildQuest: r[2], patToken: CAS_NON_PREVUS[0] }[kind];
+  const txt = { card: r[0], balise: r[1], guildQuest: r[2], patToken: DECISIONS[0] }[kind];
   return txt ? `<p class="camp-mist">🌫️ <b>Brume (Année 3)</b> : ${txt}</p>` : '';
 }
 
@@ -230,7 +230,7 @@ export function rulesSection() {
       <li>Rappels après chacune de tes préparations : réfugiés (Année 2), bandits et interlude (Année 4).</li>
       <li>Année 3 : les consignes de Pat pour la Vallée, la Balise et la Guilde suivent les règles de la brume.</li></ul>
     <h3>Précisions (campagne et livret)</h3><ul class="camp-precisions">${PRECISIONS.map((t) => `<li>${t}</li>`).join('')}</ul>
-    <h3>Cas non prévus par la campagne</h3><ul class="camp-non-prevus">${CAS_NON_PREVUS.map((t) => `<li>${t}</li>`).join('')}</ul>
+    <h3>Décision de Pascal</h3><ul class="camp-decisions">${DECISIONS.map((t) => `<li>${t}</li>`).join('')}</ul>
     ${credits()}
   </section>`;
 }

@@ -177,14 +177,15 @@ export const PRECISIONS = [
   'Année 3 : « un de ses propres objectifs » = la quête du haut de la pile Quête de Pat (campagne, Année 3 ; livret p.17 et p.19).',
   'Année 3 : la neige d’une carte face cachée prise par Pat va dans sa réserve (campagne, Année 3 : « add it to his pool »).',
   'Année 4 : les bandits arrivent avec la neige de <b>ta</b> ville ; Pat n’a jamais de neige dans sa ville, donc il ne reçoit pas de bandits (campagne, Année 4 ; livret p.21).',
+  'Année 4 : un bandit sur un lieu du plateau où Pat envoie un ouvrier est traité exactement comme la neige : Pat le chasse gratuitement, le bandit retourne dans la réserve de bandits, sans butin pour personne (campagne, Année 4 : « Bandits work exactly like snow » ; livret p.19 : Pat déblaie la neige gratuitement).',
   'Pas de score cumulé : il faut battre Pat chaque année pour passer à la suivante, sinon on la rejoue (campagne, « How to win and progress »).',
   'Les noms des Grosses Créatures sont ceux de la campagne (en anglais).',
 ];
 
 // Cas que ni la campagne ni le livret ne tranchent : l'app applique ce choix en attendant la décision de PassCool_17.
-export const CAS_NON_PREVUS = [
-  'Année 3 : jeton Pat dans la brume. L’app garde l’ordre habituel sur les cartes face visible et, s’il n’y en a aucune, applique l’ordre des cartes face cachée (le livret p.20 utilise le même ordre que pour jouer une carte de la Vallée).',
-  'Année 4 : un bandit en trop posé sur le plateau, sur un lieu où Pat envoie un ouvrier. L’app ne donne pas de consigne particulière.',
+// Décisions de Pascal pour les cas que la campagne ne tranche pas.
+export const DECISIONS = [
+  'Année 3 : jeton Pat dans la brume. On garde l’ordre habituel sur les cartes face visible ; s’il n’y en a aucune, on applique l’ordre des cartes face cachée (décision de Pascal ; le livret p.20 utilise le même ordre que pour jouer une carte de la Vallée).',
 ];
 
 // ---------- état de campagne (carnet) ----------
@@ -238,6 +239,12 @@ export function activateCritter(gc) {
 export function guildGoalDone(gc) {
   if (gc.year === 1 && !gc.faceUp) gc.faceUp = true;
   return gc;
+}
+
+// Année 4 : consigne pour un bandit sur le lieu où Pat pose un ouvrier (traité comme la neige).
+export function banditPlaceNote(s) {
+  if (s?.campaign?.year !== 4) return '';
+  return 'Année 4 : un bandit sur ce lieu ? Comme pour la neige, Pat le chasse gratuitement : remets-le dans la réserve de bandits. Pas de butin.';
 }
 
 // Année 2 : un réfugié rejoint les bandits. s = état de partie (logic.js).

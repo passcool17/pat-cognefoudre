@@ -187,8 +187,16 @@ for (const vp of viewports) {
     await page.click('[data-camp="intro"]');
     await startYear('whisper', '12-intro-annee4');
     await page.click('#btn-turn');
-    let interlude = false;
+    let interlude = false; let banditSeen = false;
     await playToEnd({
+      step: async (kind) => {
+        if (kind === 'place' && !banditSeen) {
+          const t = await page.textContent('[data-bandit]').catch(() => '');
+          assert(/gratuitement/.test(t) && /Pas de butin/.test(t), `consigne bandit absente : ${t}`);
+          banditSeen = true;
+          if (vp.name === 'telephone') { await page.evaluate(() => document.querySelector('[data-bandit]').scrollIntoView({ block: 'center' })); await page.waitForTimeout(150); await page.screenshot({ path: `${SHOTS}/concepteur-campagne-bandit.png` }); }
+        }
+      },
       reminder: async (key) => {
         if (key === 'printemps') {
           interlude = !!(await page.$('[data-reminder] details'));
@@ -197,6 +205,7 @@ for (const vp of viewports) {
       },
     });
     assert(interlude, 'Interlude jamais affiché');
+    assert(banditSeen, 'aucune pose d’ouvrier de Pat en Année 4');
     await page.click('button[data-tab="regles"]');
     await page.evaluate(() => document.querySelector('.rules.camp').scrollIntoView());
     await shot('14-regles-campagne');
@@ -204,9 +213,12 @@ for (const vp of viewports) {
       const t = await page.textContent('#app');
       assert(!/à confirmer/i.test(t), 'il reste « à confirmer »');
       assert(await page.$$eval('ul.camp-precisions li', (l) => l.length) >= 8, 'précisions campagne');
-      assert(await page.$$eval('ul.camp-non-prevus li', (l) => l.length) === 2, 'cas non prévus campagne');
+      assert(!(await page.$('ul.camp-non-prevus')), 'section « Cas non prévus » de la campagne encore là');
+      assert(!/Cas non prévus/.test(t), 'titre « Cas non prévus » encore là');
+      const dec = await page.textContent('ul.camp-decisions');
+      assert(/brume/.test(dec) && /décision de Pascal/.test(dec), dec);
       if (vp.name === 'telephone') {
-        for (const [sel, file] of [['.camp-precisions', 'confirm-campagne-precisions.png'], ['.camp-non-prevus', 'confirm-campagne-non-prevus.png']]) {
+        for (const [sel, file] of [['.camp-precisions', 'confirm-campagne-precisions.png'], ['.camp-decisions', 'decision-brume.png']]) {
           await page.evaluate((q) => { const el = document.querySelector(q).previousElementSibling; window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 70); }, sel);
           await page.waitForTimeout(150);
           await page.screenshot({ path: `${SHOTS}/${file}` });
