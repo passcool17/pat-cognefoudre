@@ -25,12 +25,12 @@ Fonctionne hors ligne une fois ouverte.
 - iPhone : Safari ne permet pas le plein écran d’une page ; ajoute l’app à l’écran d’accueil (Partager → Sur l’écran d’accueil) pour l’ouvrir sans barres.
 
 ## Pat, compagnon de jeu
-Pendant ton tour, Pat le roi bandit reste à l’écran, sans cadre, fondu dans la neige : une courte vidéo en boucle par humeur (ajuste sa couronne, tapote son marteau, tape du pied, bâille sous la neige, brandit son marteau, croise les bras), et sa gueule s’ouvre quand il parle.
+Pendant ton tour, Pat le roi bandit reste à l’écran, sans cadre, fondu dans la neige : un Pat peint (boucles de Créa) par humeur, avec deux boucles de 4,5 s chacune, « repos » quand il se tait et « parle » (gueule animée) quand on l’entend. Fondu d’environ 200 ms entre repos et parle, et entre humeurs.
 - **Il parle** au début de ton tour, parfois pendant (≈ 20-30 s, une fois sur quatre il se tait), puis s’impatiente si tu prends ton temps (50 s, puis toutes les 75 s). Touche Pat ou *Parler* pour une réplique.
 - **Son humeur suit la partie** : 😼 Content de lui, 😾 Grognon (bloqué ce tour-ci ou partie difficile), ⏳ Impatient, 😴 Endormi (hiver), 👑 Triomphant, 🙄 Boudeur (à la fin, selon les scores). 96 répliques, 16 par humeur, sans répétition tant qu’une liste n’est pas épuisée.
-- **Voix enregistrée** : chaque réplique est un petit mp3 (`audio/`, ≈ 3,3 Mo au total) généré hors ligne avec Piper (voix française « gilles », plus rauque), baissée de 2 demi-tons, avec un peu de chaleur et d’écho. Chaque réplique est vérifiée par reconnaissance vocale (faster-whisper) : celles mal comprises sont régénérées (meilleure de plusieurs prises) et quelques-unes sont écrites autrement pour la voix seulement (virgules, « Tape, tape, tape »), la bulle ne change pas. Elle marche dans tous les navigateurs (Brave sous Linux compris) et hors ligne : le service worker garde les fichiers en cache. Si un fichier manque, la synthèse vocale de l’appareil prend le relais (fr-CA, sinon fr-FR). Réglages dans ⚙️ (activer, volume, tester) ; bouton 🔊/🔇 sous Pat. La bulle s’affiche toujours. La lecture se débloque au premier toucher (iPhone, Brave).
-- **Répliques avec un nombre** : une version audio par valeur plausible (cartes 3 à 30, neige 2 à 25, jetons 2 à 10). En dessous ou au-dessus, la réplique n’est pas proposée (jamais « 0 cartes »). Singulier/pluriel gérés dans le texte. Les grognements écrits (« Grrr… », « Hmpf. ») sont dits « Hum… » à l’oral : la voix les épelait.
-- **Bouche** : dessinée par-dessus la vidéo (canvas) et calée sur le museau image par image (`avatar-tracks.js`). Avec une voix enregistrée, elle suit le volume réel (Web Audio, `AnalyserNode`) ; avec la synthèse vocale ou en muet, elle bouge en rythme minuté. Mouvement réduit (réglage système) : image fixe, seule la bouche bouge.
+- **Voix enregistrée** : chaque réplique est un petit mp3 (`audio/`) fait avec ElevenLabs (voix « C », préparée par le bot Voix). Elle marche dans tous les navigateurs (Brave sous Linux compris) et hors ligne : le service worker garde les fichiers en cache. Si un fichier manque, la synthèse vocale de l’appareil prend le relais (fr-CA, sinon fr-FR). Réglages dans ⚙️ (activer, volume, tester) ; bouton 🔊/🔇 sous Pat. La bulle s’affiche toujours, avec le texte de la réplique. La lecture se débloque au premier toucher (iPhone, Brave).
+- **Répliques avec un nombre** (cartes 3 à 30, neige 2 à 25, jetons 2 à 10) : trois morceaux enchaînés sur le même lecteur audio, début + nombre + fin (par ex. `seg-content-6-a` + `nombre-12` + `seg-content-6-b`), avec ≈ 80 ms de blanc ; Pat reste en boucle « parle » tout du long. Le morceau suivant est chargé d’avance. En dessous ou au-dessus des valeurs prévues, la réplique n’est pas proposée (jamais « 0 cartes »). Singulier/pluriel gérés dans le texte.
+- **Animation** : deux vidéos superposées ; la boucle suivante apparaît par-dessus l’ancienne, qui reste dessous jusqu’à la fin du fondu (pas de trou). Entre repos et parle de la même humeur, on reprend au même instant de la boucle. Si la vidéo ne peut pas se lire, l’image fixe de l’humeur reste affichée. Mouvement réduit (réglage système) : image fixe.
 - L’humeur est une invention de l’app (elle ne change aucune règle) ; elle est enregistrée avec la partie et suit *Annuler*.
 
 ## Campagne solo « L’année du Lapin »
@@ -70,20 +70,19 @@ npm run serve       # serveur local
 npm run test:e2e    # parties complètes dans Chrome (téléphone + tablette), BASE_URL=http://localhost:8765/
 npm run test:campagne-e2e  # campagne complète (4 années, une défaite) sur téléphone et tablette
 npm run test:pet-e2e  # compagnon : réplique, toucher, minuterie (horloge simulée), muet, réglages voix, lecture audio réelle, secours synthèse
-npm run test:realiste-e2e  # Pat réaliste : vidéo par humeur, bouche minutée et audio, mouvement réduit
+npm run test:realiste-e2e  # Pat peint : repos/parle pendant l’audio, humeurs, réplique numérotée en 3 morceaux, mouvement réduit, vidéo en panne
 npm run test:plein-ecran-e2e  # plein écran : bouton, bascule, retour proposé, API absente, app installée, astuce iPhone
 ```
-Régénérer les voix (après avoir modifié une réplique dans `pet.js`) :
+Voix : les mp3 viennent d’ElevenLabs (voix « C », faite par le bot Voix), déposés dans `/workspace/shared/voix-pat/final/` (`<id>.mp3`, plus les morceaux de `segments.json`). Pour les importer :
 ```
-tools/voix/build.sh [gilles|tom|pierre]   # Piper + ffmpeg (rubberband) ; gilles par défaut ; écrit audio/*.mp3, audio/liste.js et audio/liste.json
-node tools/voix/lines.mjs > /tmp/lignes.json
-tools/voix/best.py --lines /tmp/lignes.json --audio audio   # optionnel (pip install faster-whisper) : refait les répliques mal comprises
+node tools/voix/import.mjs     # copie les voix ElevenLabs dans audio/ ; un id absent garde l’ancienne prise ; rapport dans tools/voix/import-rapport.json
+node tools/voix/manifest.mjs   # réécrit audio/liste.js et audio/liste.json
 ```
-Puis augmenter `CACHE` dans `sw.js` pour que les téléphones récupèrent les nouveaux fichiers.
+Si tu modifies une réplique dans `pet.js`, il faut redemander le mp3 au bot Voix. (`tools/voix/build.sh`, `best.py` et `render.py` sont les anciens outils Piper « gilles », gardés pour mémoire.) Puis augmenter `CACHE` dans `sw.js` pour que les téléphones récupèrent les nouveaux fichiers.
 
-### Pat réaliste
-- `video/pat-<humeur>.webm|mp4|jpg` : boucles de 5-6 s (VP9 + H.264, 600×800), image d’attente. Le service worker met en cache le format lu par l’appareil et répond aux requêtes « Range » (Safari).
-- `tools/realiste/track.py` et `build_tracks.py` (OpenCV) : suivi du museau dans chaque vidéo → `avatar-tracks.js`.
-- Voix enregistrée → bouche : `voice.js` émet `pat:audio` au début de chaque mp3 ; l’avatar se branche sur le graphe Web Audio déjà créé par `voice.js` (`audio.__patGraph`), car un élément `<audio>` n’accepte qu’une seule source.
+### Pat peint (vidéos)
+- `video/pat-<humeur>-repos|parle.webm|mp4` : boucles de Créa (4,5 s, 24 i/s) réduites en 540×720, VP9 + H.264 ; `video/pat-<humeur>.jpg` : image fixe. Réencoder : `tools/anim/encode.sh` (ffmpeg).
+- Hors ligne sans tout télécharger d’un coup : à l’installation, le service worker garde l’app, les voix et les images fixes ; il ajoute ensuite le couple repos/parle de « content » dans le format lu par l’appareil, puis chaque boucle au moment où elle est lue la première fois. Il répond aux requêtes « Range » (Safari).
+- `voice.js` émet `pat:voix` (`{ on: true|false }`) au début et à la fin d’une réplique audio (chaîne comprise) ; `avatar.js` passe alors en « parle » ou en « repos ».
 
 Les images de cartes ne sont pas incluses : les cartes sont encodées comme données.

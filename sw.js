@@ -1,11 +1,11 @@
-const CACHE = 'pat-cognefoudre-v8';
+const CACHE = 'pat-cognefoudre-v9';
 const MOODS = ['content', 'grognon', 'impatient', 'endormi', 'triomphant', 'boudeur'];
 const ASSETS = [
-  './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'pet.js', 'voice.js', 'audio/liste.js', 'audio/liste.json', 'avatar.js', 'avatar-tracks.js', 'manifest.webmanifest',
+  './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'pet.js', 'voice.js', 'audio/liste.js', 'audio/liste.json', 'avatar.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'img/lynx.jpg',
   ...MOODS.map((m) => `video/pat-${m}.jpg`),
 ];
-const isVideo = (url) => /\/video\/pat-[a-z]+\.(webm|mp4)$/.test(new URL(url).pathname);
+const isVideo = (url) => /\/video\/pat-[a-z]+-(repos|parle)\.(webm|mp4)$/.test(new URL(url).pathname);
 // Campagne « L'année du Lapin » (ligne séparée : le fichier sw.js modifié suffit à réinstaller le cache).
 ASSETS.push('campagne.js', 'campagne-ui.js', 'campagne.css', 'fullscreen.js');
 self.addEventListener('install', (e) => {
@@ -19,7 +19,7 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
-// La page indique le format vidéo lu par le navigateur (webm ou mp4) : on garde ces 6 vidéos hors ligne.
+// La page indique le format vidéo lu par le navigateur (webm ou mp4) : on garde hors ligne les boucles demandées (les autres sont gardées dès leur première lecture).
 self.addEventListener('message', (e) => {
   if (e.data?.type !== 'precache' || !Array.isArray(e.data.urls)) return;
   const urls = e.data.urls.filter((u) => isVideo(new URL(u, self.registration.scope).href));

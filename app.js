@@ -16,7 +16,7 @@ import {
 import { initFullscreen } from './fullscreen.js';
 import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
 
-export const VERSION = '1.5.0';
+export const VERSION = '1.6.0';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -468,9 +468,10 @@ function petSay() {
   clearTimeout(petCtl.talkTimer);
   const minMs = Math.max(1800, line.text.length * 55);
   const t0 = Date.now();
-  const spoke = speak(line.text, () => {
+  // Voix audible : Pat repasse au repos dès la fin de la voix. Muet : il « parle » le temps de lire la bulle.
+  const spoke = speak(line.text, (ok) => {
     clearTimeout(petCtl.talkTimer);
-    petCtl.talkTimer = setTimeout(stopTalking, Math.max(0, minMs - (Date.now() - t0)));
+    if (ok) stopTalking(); else petCtl.talkTimer = setTimeout(stopTalking, Math.max(0, minMs - (Date.now() - t0)));
   }, line.audio);
   window.__petSpoken = (window.__petSpoken || 0) + (spoke ? 1 : 0);
   if (!spoke) { clearTimeout(petCtl.talkTimer); petCtl.talkTimer = setTimeout(stopTalking, minMs); }
