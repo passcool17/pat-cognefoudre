@@ -71,7 +71,7 @@ for (const vp of viewports) {
           if (rnd() < 0.25) await page.check('[name="snow"]');
           const r = rnd();
           if (r < 0.3) await page.click('[data-a="blocked"]');
-          else if (r < 0.4 && await page.$('[data-a="sharedHuman"]')) await page.click('[data-a="sharedHuman"]');
+          else if (r < 0.4 && await page.$('[data-a="occupied"]')) await page.click('[data-a="occupied"]');
           else await page.click('[data-a="ok"]');
           continue;
         }

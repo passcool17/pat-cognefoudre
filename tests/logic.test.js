@@ -19,9 +19,10 @@ test('données : 8 Plans, 20 Complots, 9 lignes Tactiques', () => {
   }
 });
 
-test('pile Quête : niveau 4 = 3 plaine + 1 montagne', () => {
-  assert.deepEqual(QUEST_PILE[4], { plaine: 3, montagne: 1 });
-  assert.equal(newGame({ level: 4, seed: 1 }).questPile, 4);
+test('pile Quête : niveau 4 = 3 plaine + 2 montagne (livret Silverfrost p.17)', () => {
+  assert.deepEqual(QUEST_PILE[4], { plaine: 3, montagne: 2 });
+  assert.equal(newGame({ level: 4, seed: 1 }).questPile, 5);
+  for (const n of [1, 2, 3, 4]) assert.equal(QUEST_PILE[n].plaine + QUEST_PILE[n].montagne, 5, `niveau ${n}`);
   assert.equal(newGame({ level: 1, seed: 1 }).questPile, 5);
 });
 
@@ -106,7 +107,7 @@ test('Humain pas encore préparé : la case ouvrier devient une carte + 1 neige'
   assert.fail();
 });
 
-test('Garde forestier : +1 feu sauf si ton ouvrier est déjà là', () => {
+test('Garde forestier : +1 feu sauf si ton ouvrier est sur le lieu (livret Silverfrost p.19)', () => {
   const s = newGame({ level: 2, seed: 3, startWorkers: 0 });
   for (let i = 0; i < 50; i++) {
     startTurn(s);

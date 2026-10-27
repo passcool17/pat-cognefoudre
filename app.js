@@ -7,7 +7,7 @@ import {
 import { humanFinal, gameOptions } from './campagne.js';
 import {
   newGame, startTurn, answer, adjust, setHumanPrepared, score, winner, workersLeft, patTokensFree,
-  nextSeason, locKind, baliseOf, PLAN_BY_ID, COMPLOT_BY_ID,
+  nextSeason, locKind, baliseOf, PLAN_BY_ID, COMPLOT_BY_ID, giveToPat, cityColors,
 } from './logic.js';
 import { MOODS, TIMING, TEST_LINE, computeMood, happiness, newPet, pickLine } from './pet.js';
 import {
@@ -16,8 +16,9 @@ import {
 import { initFullscreen } from './fullscreen.js';
 import { initMusic, musicSettings, setMusicOn, setMusicVolume } from './music.js';
 import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
+import { introSettings, saveIntro, introWanted, showIntro, introOpen } from './intro.js';
 
-export const VERSION = '1.6.2';
+export const VERSION = '1.7.0';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -122,6 +123,7 @@ function render() {
   if (rendering) return;
   rendering = true;
   try { document.activeElement?.blur?.(); renderNow(); } finally { rendering = false; }
+  if (introOpen()) return; // l'intro garde Pat ; on le remet en place à sa fermeture
   const fig = $('#pet');
   if (fig) mountAvatar(fig.querySelector('.pet-body'), fig.dataset.mood);
   petSync();
@@ -205,7 +207,6 @@ function renderChecklist() {
       <tr class="total"><td>Mélange-les face cachée</td><td class="n">${q.plaine + q.montagne}</td></tr>
     </table>
     <div class="qpile" aria-hidden="true">${pile}</div>
-    ${S.level === 4 ? '<p class="hint">Niveau 4 : 3 + 1 comme sur la carte Aide (le livret indique 2 remplacements).</p>' : ''}
     <button class="btn huge red" id="btn-ready">C’est prêt : au tour de Pat !</button>
   </section>`;
 }
@@ -253,7 +254,7 @@ function renderPending() {
       return `<section class="card instr" data-step="prepare"><div class="kicker">Pat se prépare pour ${SEASON_ARTICLE[next]}</div>
         <div class="big">Fais la préparation de Pat :</div>
         <ul class="steps">
-          <li>Prends toutes les cartes de la Vallée avec un jeton Pat (${S.patTokensVallee} en jeu). Place-les <b>face cachée</b> chez Pat, avec la neige qui était dessus. Remets ces jetons Pat dans la réserve.</li>
+          <li>Prends toutes les cartes de la Vallée avec un jeton Pat (${S.patTokensVallee} en jeu). Place-les <b>face cachée</b> chez Pat, avec la neige qui était dessus. Remets ces jetons Pat dans la réserve. Sur une pile de doubles, Pat ne prend que la carte du dessus.</li>
           <li>Rends à Pat ses ouvriers et donne-lui ${WORKER_GAIN[next] === 2 ? '2 nouveaux ouvriers' : '1 nouvel ouvrier'}.</li>
           <li>Retourne ${STORM_CARDS[next]} carte${STORM_CARDS[next] > 1 ? 's' : ''} Tempête de neige et ajoute la neige sur le plateau. <b>Rien dans la ville de Pat.</b></li>
           ${next === 'automne' ? '<li>Pose un jeton Pat sur le <b>lieu partagé de la Forge</b>. Désormais, quand tu le visites, donne ton feu à Pat.</li>' : ''}
@@ -277,12 +278,13 @@ function renderPending() {
         ${p.reason ? `<p class="hint">${esc(p.reason)}</p>` : ''}
         <div class="big">Pat va ${aLieu(locLabel(p.loc))}.</div>
         <p>${detail}</p>
-        ${ranger ? '<p><b>Garde forestier :</b> il peut aller sur un lieu où se trouve ton ouvrier. Il gagne 1 feu s’il ne partage pas le lieu.</p>' : ''}
+        ${ranger ? '<p><b>Garde forestier :</b> il peut aller sur un lieu exclusif <b>où se trouve ton ouvrier</b> (pas sur une carte rouge ni sur un Voyage). Il gagne 1 feu sauf s’il partage le lieu avec ton ouvrier.</p>' : ''}
         <label class="check"><input type="checkbox" name="snow"> Il y avait de la neige : Pat la déblaie gratuitement (+1 neige)</label>
         <div class="stack">
           <button class="btn red block" data-a="ok" data-form="place">${ranger ? 'Lieu libre : posé (+1 feu)' : 'C’est fait : ouvrier posé'}</button>
-          ${ranger ? '<button class="btn block" data-a="sharedHuman" data-form="place">Posé à côté de ton ouvrier (pas de feu)</button>' : ''}
+          ${ranger ? '<button class="btn block" data-a="occupied" data-form="place">Ton ouvrier est déjà là : posé quand même (pas de feu)</button>' : ''}
           <button class="btn ghost block" data-a="blocked">Lieu indisponible → carte Tactiques</button>
+          ${ranger ? '<p class="hint">Ton ouvrier ne bloque pas le garde forestier. « Indisponible » si un autre ouvrier de Pat ou un garde forestier occupe déjà ce lieu exclusif, ou si le lieu ne peut pas être visité.</p>' : ''}
         </div></section>`;
     }
     case 'balise': {
@@ -304,6 +306,7 @@ function renderPending() {
         ${p.mist ? mistNote('guildQuest') : ''}
         <ul class="steps"><li>Prends la plus élevée possible.</li><li>Chaque feu de Pat (${S.fire}) compte comme 1 ressource au choix.</li>
         <li>Ses cartes face cachée (${S.faceDown}) comptent comme des cartes en main.</li><li>Ville de Pat : ${S.city} cartes, dont ${S.violet} violette${S.violet > 1 ? 's' : ''}.</li></ul>
+        <p class="hint">Les Quêtes en montagne sont publiques : le premier qui la réalise la prend. Si Pat la fait, elle n’est plus disponible pour toi.</p>
         <div class="field"><span class="lbl">Valeur de la quête en montagne</span>${stepper('points', 8)}</div>
         <div class="stack"><button class="btn red block" data-a="mountain" data-form="points">Oui : Pat la réalise ${scrollIcon('montagne')}</button>
         <button class="btn block" data-a="none">Non → quête du haut de sa pile (${S.questPile} restante${S.questPile > 1 ? 's' : ''})</button></div></section>`;
@@ -318,7 +321,7 @@ function renderPending() {
       return `<section class="card instr" data-step="patToken"><div class="kicker">Carte Tactiques utilisée</div>
         <div class="big">${none ? 'Plus aucun jeton Pat disponible : on n’en pose pas.' : 'Pose un jeton Pat sur une carte de la Vallée.'}</div>
         ${none ? '' : `<p>Ordre des couleurs du Complot :</p>${chipsFor(p.colors)}
-        <ul class="steps"><li>Puis la valeur la plus élevée, puis la carte avec de la neige.</li><li>Puis de gauche à droite et de haut en bas.</li><li>Ignore les cartes qui ont déjà un jeton Pat.</li></ul>
+        <ul class="steps"><li>Puis la valeur la plus élevée, puis la carte avec de la neige.</li><li>Puis de gauche à droite et de haut en bas.</li><li>Ignore les cartes qui ont déjà un jeton Pat.</li><li>Doubles empilés : la Vallée montre toujours 8 cartes différentes. Une pile compte comme une seule carte, celle du dessus.</li></ul>
         <p class="hint">Jetons Pat libres : ${p.available} / ${PAT_TOKENS}</p>${p.mist ? mistNote('patToken') : ''}`}
         <div class="stack">${none ? '<button class="btn red block" data-a="none">Continuer</button>' : '<button class="btn red block" data-a="ok">Jeton posé</button><button class="btn ghost block" data-a="none">Aucune carte possible</button>'}</div></section>`;
     }
@@ -327,7 +330,7 @@ function renderPending() {
       const head = p.src === 'pile'
         ? '<div class="big">Retourne la carte du dessus de la <b>pile principale</b> et place-la face visible dans la ville de Pat.</div>'
         : `<div class="big">Pat joue une carte de la <b>Vallée</b>.</div><p>Couleur prioritaire, de gauche à droite :</p>${chipsFor(p.colors)}
-           <ul class="steps"><li>Plusieurs cartes de cette couleur : prends la valeur la plus élevée.</li><li>Égalité : la carte avec de la neige (déblayée gratuitement).</li><li>Encore égalité : de gauche à droite, puis de haut en bas.</li></ul>
+           <ul class="steps"><li>Plusieurs cartes de cette couleur : prends la valeur la plus élevée.</li><li>Égalité : la carte avec de la neige (déblayée gratuitement).</li><li>Encore égalité : de gauche à droite, puis de haut en bas.</li><li>Doubles empilés : la Vallée montre toujours 8 cartes différentes. Une pile compte comme une seule carte, celle du dessus.</li><li>Réapprovisionne la Vallée : une carte en double va sur la pile de la même carte.</li></ul>
            ${p.mist ? mistNote('card') : ''}`;
       return `<section class="card instr" data-step="card"><div class="kicker">Pat joue une carte${p.replaced ? ' · +1 neige' : ''}</div>
         ${why ? `<p class="hint">${why}${p.replaced ? ' Il gagne 1 neige.' : ''}</p>` : ''}
@@ -510,6 +513,30 @@ function statAdj(field, v, k) {
     <div class="adj"><button data-adj="${field}" data-d="-1" aria-label="${k} moins un">−</button><button data-adj="${field}" data-d="1" aria-label="${k} plus un">+</button></div></div>`;
 }
 
+// Résumé Silverfrost : donner au joueur à ta gauche, ou comparer ta progression avec lui (quêtes). En solo, c'est Pat.
+function neighbourCard() {
+  const cc = cityColors(S);
+  const known = Object.values(cc).reduce((a, x) => a + x, 0);
+  const colors = Object.entries(COLORS).map(([k, c]) => `<span class="chip" style="background:${c.hex}">${c.short} ${cc[k]}</span>`).join(' ');
+  return `<section class="card" data-card="voisin"><div class="kicker">Joueur à ta gauche = Pat</div>
+      <p>Quand une carte ou une quête parle du <b>joueur à ta gauche</b>, c’est Pat. Pour comparer :</p>
+      <div class="stats">
+        <div class="stat"><div class="v">${S.city}</div><div class="k">cartes en ville</div></div>
+        <div class="stat"><div class="v">${S.faceDown}</div><div class="k">face cachée</div></div>
+        <div class="stat"><div class="v">${S.fire} 🔥</div><div class="k">feu</div></div>
+        <div class="stat"><div class="v">${S.snow} ❄</div><div class="k">neige</div></div>
+        <div class="stat"><div class="v">${S.quests.count}</div><div class="k">quêtes</div></div>
+        <div class="stat"><div class="v">${S.workers.normal + 1}</div><div class="k">ouvriers</div></div>
+      </div>
+      <p class="hint">Couleurs connues (${known}/${S.city}) : ${colors}</p>
+      <button class="btn block" data-ev="give-fire">Je donne 1 feu à Pat → il le garde</button>
+      <button class="btn block" style="margin-top:8px" data-ev="give">Je donne une carte à Pat / il pioche → +1 carte face cachée</button>
+      <button class="btn ghost block" style="margin-top:8px" data-ev="give-res">Je donne une autre ressource → retour à la réserve</button>
+      <p class="hint"><span class="flag">interprétation</span> Pat ne garde aucune ressource, sauf le feu (bonus de niveau).</p>
+      <p class="hint">Pat n’a pas de main : une carte donnée va face cachée chez lui, sans limite. ${S.passed ? '<b>Pat a passé : on ne lui donne plus rien.</b>' : 'Une fois que Pat a passé, on ne lui donne plus rien.'}</p>
+    </section>`;
+}
+
 function renderSuivi() {
   const w = S.workers;
   const dots = Array.from({ length: w.normal }, (_, i) => `<span class="dot ${i < w.normalPlaced ? 'used' : ''}">🐾</span>`).join('')
@@ -533,8 +560,8 @@ function renderSuivi() {
       ${S.guildToken ? '<button class="btn block" style="margin-top:8px" data-ev="guild">J’ai visité la Guilde partagée → +1 feu à Pat</button>' : ''}
       <button class="btn block" style="margin-top:8px" data-ev="token">J’ai joué une carte avec un jeton Pat → jeton rendu</button>
       <button class="btn block" style="margin-top:8px" data-ev="community">J’ai visité un lieu communautaire d’une carte de Pat → +1 jeton Point</button>
-      <button class="btn block" style="margin-top:8px" data-ev="give">J’ai donné une carte à Pat / il pioche → +1 carte face cachée</button>
     </section>
+    ${neighbourCard()}
     <section class="card"><div class="kicker">Carte Tactiques · flèche ${PLAN_BY_ID[S.plan.id].arrow === 'bas' ? '⬇' : '⬆'}</div>
       <ol class="tact">${TACTIQUES.map((t, i) => `<li class="${S.tactiquesPos === i ? 'on' : ''}">${tactLabel(t)}</li>`).join('')}</ol>
       <p class="hint">${S.opts.loopTactiques ? 'Rebouclage activé.' : 'Sans rebouclage : au bout de la liste, Pat joue une carte (+1 neige).'}</p></section>
@@ -591,13 +618,33 @@ function renderScore() {
 }
 
 function renderRegles() {
-  return `<section class="card rules"><div class="kicker">Aide-mémoire</div><h2>Comment joue Pat</h2>
+  return `<section class="card rules"><div class="kicker">Aide-mémoire</div><h2>Règles</h2>
+  <p class="hint">Source principale : le livret officiel <i>Everdell: Silverfrost</i> (2025, règles solo comprises). Trois couches : ① les règles du premier Everdell, ② modifiées par Silverfrost, ③ puis le mode solo de Pat par-dessus.</p>
+  <h3 id="everdell">① Base : Everdell (ce qui reste vrai)</h3><ul class="everdell">
+    <li>À ton tour, <b>une seule action</b> : placer un ouvrier, jouer une carte, ou te préparer pour la saison.</li>
+    <li>Lieux <b>exclusifs</b> (un seul ouvrier) et <b>partagés</b> (anneau ouvert : plusieurs ouvriers, même de la même couleur).</li>
+    <li>Ville : <b>15 cartes</b> au maximum. Cartes Communes en plusieurs exemplaires, cartes Uniques en un seul.</li>
+    <li>Main limitée à <b>8 cartes</b>. Une carte à donner à un joueur dont la main est pleine est défaussée.</li>
+    <li>Une carte jouée depuis la Vallée est remplacée tout de suite ; si on en pioche plusieurs, on pioche tout puis on réapprovisionne.</li>
+    <li>Se préparer : seulement quand tous tes ouvriers sont posés ; tu reprends tes ouvriers, toi seul.</li>
+    <li>Un joueur qui a passé ne reçoit plus ni carte ni ressource (on défausse à la place).</li></ul>
+  <h3 id="silverfrost">② Ce que Silverfrost change (résumé)</h3><ul class="silverfrost">
+    <li>❄ <b>Neige</b> : elle arrive sur les cartes et les lieux à chaque préparation de saison. Tu paies du feu pour la déblayer ; plus tu en déblaies, plus tu marques. Elle recouvre aussi les cartes de ta ville. Pat la déblaie gratuitement et la garde (rien dans sa ville).</li>
+    <li>🌲 <b>Garde forestier</b> : il peut aller sur un lieu exclusif déjà occupé par un adversaire (pas par toi-même, pas sur une carte rouge ni un Voyage), ou gagne 1 feu sur un lieu libre. Celui de Pat gagne 1 feu sauf si ton ouvrier est sur le lieu.</li>
+    <li>🃏 <b>Vallée</b> : les doubles sont empilés au même endroit, donc toujours 8 cartes différentes visibles. Pour Pat, une pile = une carte (celle du dessus).</li>
+    <li>🚫 <b>Pas d’Événements</b> : à la place, la Guilde des Forestiers et ses quêtes.</li>
+    <li>${scrollIcon('montagne')} <b>Quêtes en montagne</b> : publiques, le premier qui la réalise la prend (Pat aussi). ${scrollIcon('plaine')} <b>Quêtes en plaine</b> : objectifs personnels, toute la partie (celles de Pat sont dans sa pile).</li>
+    <li>🔥 <b>Balises</b> : on y dépense du feu pour appeler une Grosse Créature ; le choix change pendant la partie. Pat défausse la créature et prend ses points.</li>
+    <li>🏠 <b>Cheminées</b> : jouer une Créature gratuitement si tu as le feu demandé. Elles remplacent les jetons « occupé » d’Everdell : pas liées à une Créature précise. Seulement 2 dans la partie (une en te préparant pour l’automne, une pour l’hiver). Pat n’en a pas : il joue tout gratuitement.</li>
+    <li>🟥 <b>Cartes rouges</b> : leur lieu principal est réservé à celui qui a joué la carte (le garde forestier ne passe pas outre). Les Créatures rouges ont en plus un lieu <b>Communauté</b> que seuls les adversaires visitent ; le propriétaire gagne alors 1 jeton Point. Chez Pat : tu ne vas pas sur le lieu principal (Pat ne l’utilise pas), mais tu peux visiter le lieu Communauté de ses Créatures rouges → +1 point pour Pat (onglet Suivi).</li>
+    <li>👈 <b>Joueur à ta gauche</b> : on lui donne des objets ou on compare sa progression pour une quête. En solo, c’est Pat (onglet Suivi : comparaison et dons).</li></ul>
+  <h3 id="solo">③ Mode solo : comment joue Pat (par-dessus)</h3>
   <h3>À chaque tour</h3><ul>
     <li>Une seule action : placer un ouvrier, jouer une carte, ou se préparer pour la saison.</li>
     <li>L’app révèle un Complot et le pose sur le prochain coin du Plan : la caverne d’abord, puis dans le sens horaire. 🐾 = ouvrier, 🃏 = carte.</li>
     <li>On lit le quart du Complot qui recouvre ce coin <span class="flag">interprétation</span>.</li></ul>
   <h3>Ouvriers</h3><ul>
-    <li>Ouvriers normaux d’abord, garde forestier en dernier. Le garde forestier gagne 1 feu, sauf s’il partage un lieu avec ton ouvrier.</li>
+    <li>Ouvriers normaux d’abord, garde forestier en dernier. Le garde forestier peut partager un lieu avec ton ouvrier (sans feu) ; sinon, il gagne 1 feu.</li>
     <li>Pat ne gagne ni ne paie de ressources. Il déblaie la neige gratuitement et la garde.</li>
     <li>Forge : lieu exclusif, +1 feu. Guilde : lieu exclusif, puis une Quête en montagne ${scrollIcon('montagne')} si possible, sinon la quête du haut de sa pile. Balise : il défausse la Grosse Créature et gagne ses points. Voyage : au printemps seulement (au niveau 1, toujours le lieu partagé à 2).</li>
     <li>Lieu indisponible : suis la carte Tactiques dans le sens de la flèche du Plan, puis pose un jeton Pat dans la Vallée.</li>
@@ -613,7 +660,9 @@ function renderRegles() {
   <h3>Score</h3><ul>
     <li>Cartes, quêtes ${scrollIcon('plaine')}${scrollIcon('montagne')}, jetons Point, Voyages, 1 par neige (+5 s’il en a le plus), et les bonus du niveau. En cas d’égalité, Pat gagne.</li></ul>
   <h3>Choix de l’app <span class="flag">à confirmer</span></h3><ul>
-    <li>Niveau 4 : pile de 3 ${scrollIcon('plaine')} + 1 ${scrollIcon('montagne')}, comme sur la carte Aide.</li>
+        <li>Jeton Pat sur une pile de doubles : en se préparant, Pat ne prend que la carte du dessus.</li>
+    <li>Don au joueur à ta gauche (Pat) : le feu reste chez lui, une carte va face cachée, toute autre ressource retourne à la réserve.</li>
+    <li>Niveau 4 : pile de 3 ${scrollIcon('plaine')} + 2 ${scrollIcon('montagne')} (5 quêtes, livret Silverfrost p.17).</li>
     <li>Tactiques : pas de rebouclage par défaut (option dans les réglages). Au bout de la liste, Pat joue la carte du coin (+1 neige).</li>
     <li>« Balise ? » de la carte Tactiques : on prend la valeur de balise du Complot en cours.</li>
     <li>Guilde sans quête possible (pile vide, aucune ${scrollIcon('montagne')}) : l’ouvrier se déplace avec la carte Tactiques.</li>
@@ -676,7 +725,9 @@ function bind() {
       if (ev === 'forge' || ev === 'guild') adjust(s, 'fire', 1);
       if (ev === 'community') adjust(s, 'points', 1);
       if (ev === 'token') adjust(s, 'patTokensVallee', -1);
-      if (ev === 'give') adjust(s, 'faceDown', 1);
+      if (ev === 'give') giveToPat(s, 'carte');
+      if (ev === 'give-fire') giveToPat(s, 'feu');
+      if (ev === 'give-res') giveToPat(s, 'ressource');
     });
     toast('Noté pour Pat');
   }));
@@ -741,7 +792,15 @@ syncMusicUI();
 $('#btn-music').addEventListener('click', () => { setMusicOn(!musicSettings.on); syncMusicUI(); });
 $('#opt-music').addEventListener('change', (e) => { setMusicOn(e.target.checked); syncMusicUI(); });
 $('#opt-music-volume').addEventListener('input', (e) => setMusicVolume(e.target.value));
-$('#btn-settings').addEventListener('click', () => { $('#app-version').textContent = `Version ${VERSION}`; syncVoiceUI(); $('#settings').showModal(); });
+$('#btn-settings').addEventListener('click', () => {
+  $('#app-version').textContent = `Version ${VERSION}`; syncVoiceUI();
+  $('#opt-intro').checked = introSettings.on;
+  $('#settings').showModal();
+});
+// Intro de Pat : réglage (à chaque ouverture ou non) et « Revoir l'intro ».
+$('#opt-intro').addEventListener('change', (e) => { introSettings.on = e.target.checked; saveIntro(); });
+$('#btn-intro-replay').addEventListener('click', () => { $('#settings').close?.(); clearPetTimers(); petCtl.key = null; stopSpeaking(); stopTalking(); openIntro(); });
+function openIntro() { showIntro({ onDone: () => render() }); }
 $('#opt-voice').addEventListener('change', (e) => setVoiceOn(e.target.checked));
 $('#opt-volume').addEventListener('input', (e) => { voiceSettings.volume = Number(e.target.value); saveVoice(); });
 $('#btn-voice-test').addEventListener('click', () => {
@@ -754,6 +813,7 @@ $('#opt-loop').addEventListener('change', (e) => { if (S) act((s) => { s.opts.lo
 $('#btn-new').addEventListener('click', confirmNew);
 
 render();
+if (introWanted({ search: location.search, webdriver: !!navigator.webdriver })) openIntro();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

@@ -15,7 +15,7 @@ export function respond(s, r) {
     case 'place': {
       const x = r();
       if (x < 0.3) return answer(s, 'blocked');
-      if (p.worker === 'ranger' && x < 0.4) return answer(s, 'sharedHuman');
+      if (p.worker === 'ranger' && x < 0.4) return answer(s, 'occupied');
       return answer(s, 'ok', { snow: r() < 0.2 });
     }
     case 'balise': case 'voyageValue': case 'pileQuest': return answer(s, 'ok', { points: Math.floor(r() * 5) });

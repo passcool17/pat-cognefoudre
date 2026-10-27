@@ -10,9 +10,29 @@ Application web (PWA) en français qui remplace les cartes Plan, Complot et Tact
 - **Suivi** : ouvriers, jetons Pat, feu, neige, ville, cartes face cachée, journal, corrections manuelles.
 - **Annuler**, sauvegarde automatique sur l’appareil, nouvelle partie (⚙️).
 - **Score** de Pat avec les bonus du niveau ; en cas d’égalité, Pat gagne.
-- **Règles** : aide-mémoire et liste des interprétations.
+- **Règles** : ① la base Everdell, ② ce que *Silverfrost* change (résumé), ③ le mode solo de Pat par-dessus, et la liste des interprétations.
 
 Fonctionne hors ligne une fois ouverte.
+
+## Règles en trois couches (v1.7.0)
+
+Source principale : le livret officiel *Everdell: Silverfrost* (2025, 24 p., règles solo p.17-21). Le résumé « Silverfrost vs Everdell » et le livret *Everdell* de 2018 ne servent qu’en appui.
+
+1. **Everdell** : la base. Ce que Silverfrost ne change pas reste vrai : une action par tour, lieux exclusifs/partagés, ville de 15 cartes, main de 8 cartes (carte donnée à une main pleine → défaussée), Vallée réapprovisionnée tout de suite, préparation quand tous les ouvriers sont posés, rien ne se donne à un joueur qui a passé.
+2. **Silverfrost** : neige, garde forestier, Vallée à doubles empilés, Guilde et quêtes au lieu des Événements, balises, cheminées (à la place des jetons « occupé »), cartes rouges, joueur à ta gauche.
+3. **Mode solo de Pat** : par-dessus les deux.
+
+Ce qui change dans l’app :
+- **Garde forestier de Pat** : +1 feu sauf si *ton* ouvrier est sur le lieu (p.19 et p.21). Bouton « Ton ouvrier est déjà là ».
+- **Vallée** : les doubles sont empilés, 8 cartes différentes toujours visibles ; pour Pat, une pile = la carte du dessus (choix de carte, jeton Pat, prise en se préparant).
+- **Pas d’Événements** : la Guilde des Forestiers et ses quêtes. Quêtes en montagne publiques, au premier qui la réalise (le journal le rappelle quand Pat en prend une) ; quêtes en plaine personnelles.
+- **Cartes rouges** : lieu principal réservé à celui qui a joué la carte ; les Créatures rouges ont un lieu Communauté pour les adversaires (+1 point au propriétaire). L’app compte les couleurs de la ville de Pat et le rappelle au journal.
+- **Joueur à ta gauche = Pat** (Suivi) : comparaison de sa progression et dons (feu gardé, carte face cachée sans limite car Pat n’a pas de main, autre ressource → réserve). Rien ne se donne à Pat après qu’il a passé.
+- **Neige, balises, cheminées** : résumés dans l’onglet Règles ; Pat déblaie gratuitement et n’utilise pas de cheminée.
+
+## Intro de Pat
+
+À chaque ouverture : écran plein avec Pat grognon, le titre et un gros bouton **Entrer** (les navigateurs exigent un toucher pour le son). Au toucher, la musique entre en fondu, Pat passe en boucle « parle » et dit « Grrr… Je suis Pat Cognefoudre, le Roi des Bandits. Tu m’entends bien ? » (voix enregistrée, sous-titrée), puis l’intro s’efface vers l’app. **Passer ›** en haut à droite. Dans ⚙️ → 🎬 Intro : la couper à l’ouverture, ou **Revoir l’intro**. Paramètre d’URL `?intro=0` / `?intro=1` pour forcer.
 
 ## Installer sur le téléphone
 - **Android (Chrome)** : ouvre le lien, menu ⋮ → *Installer l’application* (ou *Ajouter à l’écran d’accueil*).
@@ -63,7 +83,7 @@ D’après **The Year of the Rabbit** d’Otto Gregor (campagne non officielle, 
 
 ## Interprétations (à confirmer)
 - On lit le quart du Complot qui recouvre le coin du Plan en cours.
-- Niveau 4 : pile de 3 quêtes en plaine + 1 en montagne.
+- Niveau 4 : pile de 3 quêtes en plaine + 2 en montagne (5 quêtes, livret Silverfrost p.17).
 - Carte Tactiques : pas de rebouclage par défaut (option dans ⚙️). Au bout de la liste, Pat joue la carte du coin (+1 neige).
 - « Balise ? » de la carte Tactiques : valeur de balise du Complot en cours.
 - Guilde sans quête possible : l’ouvrier se déplace avec la carte Tactiques.
@@ -82,6 +102,8 @@ npm run test:pet-e2e  # compagnon : réplique, toucher, minuterie (horloge simul
 npm run test:realiste-e2e  # Pat peint : repos/parle pendant l’audio, humeurs, réplique numérotée en 3 morceaux, mouvement réduit, vidéo en panne
 npm run test:plein-ecran-e2e  # plein écran : bouton, bascule, retour proposé, API absente, app installée, astuce iPhone
 npm run test:musique-e2e  # musique : premier toucher, baisse quand Pat parle (chaîne comprise), rampes, 🎵 et volume mémorisés, onglet caché, hors ligne
+npm run test:intro-e2e  # intro : Entrer (musique, Pat parle, sous-titre), Passer, réglage ⚙️, Revoir, iPhone, vidéo de démo intro-demo.mp4
+npm run test:regles-e2e  # règles Silverfrost : onglet Règles, garde forestier, Vallée, joueur à ta gauche
 ```
 Voix : les mp3 viennent d’ElevenLabs (voix « C », faite par le bot Voix), déposés dans `/workspace/shared/voix-pat/final/` (`<id>.mp3`, plus les morceaux de `segments.json`). Pour les importer :
 ```

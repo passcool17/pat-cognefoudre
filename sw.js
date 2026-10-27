@@ -1,7 +1,7 @@
-const CACHE = 'pat-cognefoudre-v11';
+const CACHE = 'pat-cognefoudre-v12';
 const MOODS = ['content', 'grognon', 'impatient', 'endormi', 'triomphant', 'boudeur'];
 const ASSETS = [
-  './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'pet.js', 'voice.js', 'audio/liste.js', 'audio/liste.json', 'avatar.js', 'manifest.webmanifest',
+  './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'pet.js', 'voice.js', 'audio/liste.js', 'audio/liste.json', 'avatar.js', 'intro.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'img/lynx.jpg',
   ...MOODS.map((m) => `video/pat-${m}.jpg`),
 ];

@@ -323,3 +323,34 @@ html:fullscreen, html:-webkit-full-screen { background: var(--night); }
 }
 .music-btn { position: relative; }
 .music-btn.off::after { content: ""; position: absolute; left: 9px; right: 9px; top: 50%; height: 2px; background: var(--cream); transform: rotate(-40deg); border-radius: 2px; }
+
+/* ---------- Intro de Pat (au lancement) ---------- */
+.intro {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; overflow: auto;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px));
+  background:
+    radial-gradient(900px 520px at 50% 30%, rgba(120, 90, 160, .55) 0%, transparent 65%),
+    linear-gradient(180deg, var(--plum), var(--night));
+  color: var(--cream); text-align: center;
+  opacity: 1; transition: opacity .65s ease, transform .65s ease;
+}
+.intro.out { opacity: 0; transform: scale(1.04); pointer-events: none; }
+.intro-inner { display: grid; justify-items: center; gap: 8px; width: min(100%, 520px); animation: intro-in .7s ease-out; }
+.intro .intro-pat { width: min(78vw, 380px, 46vh); margin: 0 auto; cursor: default; }
+.intro-title { margin: 4px 0 0; font-size: clamp(1.9rem, 7vw, 2.8rem); letter-spacing: .02em; color: #fff; text-shadow: 0 3px 14px rgba(0, 0, 0, .5); }
+.intro-sub { margin: 0; opacity: .85; font: 600 .95rem system-ui; }
+.intro-line {
+  min-height: 3.2em; max-width: 32ch; margin: 6px auto 4px; font-size: 1.12rem; line-height: 1.35; font-style: italic;
+  opacity: 0; transform: translateY(6px); transition: opacity .35s ease, transform .35s ease;
+}
+.intro-line.show { opacity: 1; transform: none; }
+.intro .intro-enter { width: min(100%, 320px); }
+.intro.speaking .intro-enter { background: transparent; border: 2px solid rgba(255, 255, 255, .6); box-shadow: none; }
+.intro-skip {
+  position: absolute; top: max(12px, env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+  background: rgba(255, 255, 255, .12); color: #fff; border: 1px solid rgba(255, 255, 255, .35); border-radius: 999px;
+  padding: 8px 14px; font: 700 .95rem system-ui; cursor: pointer;
+}
+body.intro-on { overflow: hidden; }
+@keyframes intro-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .intro, .intro-inner, .intro-line { transition: none; animation: none; } }
