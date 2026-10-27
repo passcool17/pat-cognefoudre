@@ -1,0 +1,23 @@
+/* Campagne « L'année du Lapin » */
+.camp-entry { border: 2px dashed var(--violet); }
+.camp-entry h2 { margin: 4px 0; }
+.camp-quote { font-style: italic; color: var(--violet); }
+.camp-story p { line-height: 1.5; margin: 8px 0; }
+.camp-story summary, .camp-banner summary, .camp details summary { cursor: pointer; padding: 4px 0; }
+.camp-years { padding-left: 20px; }
+.camp-year { margin: 6px 0; }
+.camp-year.a-venir { opacity: .6; }
+.camp-chip { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; background: #fffaf0; border: 2px solid var(--cream-2); font: 700 .95rem system-ui, sans-serif; color: var(--ink); }
+.camp-allies { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 8px 0; }
+.camp-levels .btn { flex: 1; min-width: 70px; padding-left: 8px; padding-right: 8px; }
+.camp-win { font-weight: 700; font-size: 1.15rem; text-align: center; }
+.camp-hist { font-size: .9rem; }
+.camp-hist th { text-align: left; font: 700 .75rem system-ui, sans-serif; color: var(--muted); }
+.camp-banner { padding-top: 10px; padding-bottom: 10px; border-left: 6px solid var(--violet); }
+.camp-banner .kicker { display: inline; }
+.camp-critter { margin: 8px 0; font: 600 1rem system-ui, sans-serif; }
+.camp-reminder { border: 3px solid #e0a526; background: #fff7e0; }
+.camp-mist { background: var(--ice); border-left: 5px solid #7d9bb8; padding: 8px 10px; border-radius: 10px; margin: 8px 0; line-height: 1.4; }
+.camp-credits a { color: var(--violet); }
+.camp-score { margin-bottom: 6px; }
+.level[disabled] { opacity: .45; }

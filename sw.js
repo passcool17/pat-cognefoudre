@@ -1,4 +1,4 @@
-const CACHE = 'pat-cognefoudre-v6';
+const CACHE = 'pat-cognefoudre-v7';
 const MOODS = ['content', 'grognon', 'impatient', 'endormi', 'triomphant', 'boudeur'];
 const ASSETS = [
   './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'pet.js', 'voice.js', 'audio/liste.js', 'audio/liste.json', 'avatar.js', 'avatar-tracks.js', 'manifest.webmanifest',
@@ -6,6 +6,8 @@ const ASSETS = [
   ...MOODS.map((m) => `video/pat-${m}.jpg`),
 ];
 const isVideo = (url) => /\/video\/pat-[a-z]+\.(webm|mp4)$/.test(new URL(url).pathname);
+// Campagne « L'année du Lapin » (ligne séparée : le fichier sw.js modifié suffit à réinstaller le cache).
+ASSETS.push('campagne.js', 'campagne-ui.js', 'campagne.css');
 self.addEventListener('install', (e) => {
   // Cœur de l'app, puis toutes les répliques audio (≈ 3 Mo) pour que Pat parle hors ligne.
   e.waitUntil(caches.open(CACHE).then(async (c) => {

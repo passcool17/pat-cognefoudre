@@ -2,6 +2,10 @@ import {
   COLORS, TACTIQUES, SEASON_LABEL, SEASON_ARTICLE, STORM_CARDS, QUEST_PILE, LEVEL_BONUS, PAT_TOKENS, WORKER_GAIN,
 } from './data.js';
 import {
+  camp, setupEntryCard, renderCampaignScreen, campaignBanner, scoreCampaignRows, mistNote, rulesSection, bindCampaign,
+} from './campagne-ui.js';
+import { humanFinal, gameOptions } from './campagne.js';
+import {
   newGame, startTurn, answer, adjust, setHumanPrepared, score, winner, workersLeft, patTokensFree,
   nextSeason, locKind, baliseOf, PLAN_BY_ID, COMPLOT_BY_ID,
 } from './logic.js';
@@ -11,7 +15,7 @@ import {
 } from './voice.js';
 import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
 
-export const VERSION = '1.3.0';
+export const VERSION = '1.4.0';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -136,16 +140,17 @@ function renderNow() {
   const tabs = $('#tabs');
   if (!S || showChecklist) {
     tabs.hidden = !S;
-    app.innerHTML = S ? renderChecklist() : renderSetup();
+    app.innerHTML = S ? renderChecklist() : camp.view ? renderCampaignScreen() : renderSetup();
     $('#subtitle').textContent = 'Roi des Bandits · Everdell : Silverfrost';
     bind();
     return;
   }
   tabs.hidden = false;
   tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
-  $('#subtitle').textContent = `Niveau ${S.level} · ${SEASON_LABEL[S.season]} · tour ${S.turn}`;
+  $('#subtitle').textContent = `${S.campaign ? `Campagne An ${S.campaign.year} · ` : ''}Niveau ${S.level} · ${SEASON_LABEL[S.season]} · tour ${S.turn}`;
   $('#opt-loop').checked = !!S.opts.loopTactiques;
-  app.innerHTML = { tour: renderTour, suivi: renderSuivi, score: renderScore, regles: renderRegles }[tab]();
+  const banner = tab === 'tour' || tab === 'score' ? campaignBanner(S, tab === 'tour') : '';
+  app.innerHTML = banner + { tour: renderTour, suivi: renderSuivi, score: renderScore, regles: renderRegles }[tab]();
   bind();
 }
 
@@ -172,7 +177,8 @@ function renderSetup() {
     <div class="field"><span class="lbl">Ouvriers normaux de Pat en été<br><span class="hint">Comme pour toi à 2 joueurs (mise en place p.6, non numérisée). Valeur par défaut : 2, à vérifier.</span></span>${stepper('startWorkers', setupDraft.startWorkers, 1, 6)}</div>
     <label class="check"><input type="checkbox" name="loop" ${setupDraft.loop ? 'checked' : ''}> Carte Tactiques : reboucler en bout de liste <span class="flag">option</span></label>
     <button class="btn huge red" id="btn-start">Mélanger les cartes de Pat</button>
-  </section>`;
+  </section>
+  ${setupEntryCard()}`;
 }
 
 function renderChecklist() {
@@ -280,6 +286,7 @@ function renderPending() {
     case 'balise': {
       return `<section class="card instr" data-step="balise"><div class="kicker">Balise</div>
         <div class="big">Défausse la Grosse Créature de la balise ${p.value ?? '?'} et réapprovisionne.</div>
+        ${p.mist ? mistNote('balise') : ''}
         <p>Pat ignore le texte de la carte. Combien de jetons Point gagne-t-il ?</p>
         <div class="field"><span class="lbl">Jetons Point</span>${stepper('points', p.value ?? 0)}</div>
         <button class="btn huge red" data-a="ok" data-form="points">Valider</button></section>`;
@@ -292,6 +299,7 @@ function renderPending() {
     case 'guildQuest':
       return `<section class="card instr" data-step="guildQuest"><div class="kicker">Guilde · quête</div>
         <div class="big">Pat remplit-il les exigences d’une Quête en montagne ${scrollIcon('montagne')} face visible ?</div>
+        ${p.mist ? mistNote('guildQuest') : ''}
         <ul class="steps"><li>Prends la plus élevée possible.</li><li>Chaque feu de Pat (${S.fire}) compte comme 1 ressource au choix.</li>
         <li>Ses cartes face cachée (${S.faceDown}) comptent comme des cartes en main.</li><li>Ville de Pat : ${S.city} cartes, dont ${S.violet} violette${S.violet > 1 ? 's' : ''}.</li></ul>
         <div class="field"><span class="lbl">Valeur de la quête en montagne</span>${stepper('points', 8)}</div>
@@ -309,7 +317,7 @@ function renderPending() {
         <div class="big">${none ? 'Plus aucun jeton Pat disponible : on n’en pose pas.' : 'Pose un jeton Pat sur une carte de la Vallée.'}</div>
         ${none ? '' : `<p>Ordre des couleurs du Complot :</p>${chipsFor(p.colors)}
         <ul class="steps"><li>Puis la valeur la plus élevée, puis la carte avec de la neige.</li><li>Puis de gauche à droite et de haut en bas.</li><li>Ignore les cartes qui ont déjà un jeton Pat.</li></ul>
-        <p class="hint">Jetons Pat libres : ${p.available} / ${PAT_TOKENS}</p>`}
+        <p class="hint">Jetons Pat libres : ${p.available} / ${PAT_TOKENS}</p>${p.mist ? mistNote('patToken') : ''}`}
         <div class="stack">${none ? '<button class="btn red block" data-a="none">Continuer</button>' : '<button class="btn red block" data-a="ok">Jeton posé</button><button class="btn ghost block" data-a="none">Aucune carte possible</button>'}</div></section>`;
     }
     case 'card': {
@@ -317,7 +325,8 @@ function renderPending() {
       const head = p.src === 'pile'
         ? '<div class="big">Retourne la carte du dessus de la <b>pile principale</b> et place-la face visible dans la ville de Pat.</div>'
         : `<div class="big">Pat joue une carte de la <b>Vallée</b>.</div><p>Couleur prioritaire, de gauche à droite :</p>${chipsFor(p.colors)}
-           <ul class="steps"><li>Plusieurs cartes de cette couleur : prends la valeur la plus élevée.</li><li>Égalité : la carte avec de la neige (déblayée gratuitement).</li><li>Encore égalité : de gauche à droite, puis de haut en bas.</li></ul>`;
+           <ul class="steps"><li>Plusieurs cartes de cette couleur : prends la valeur la plus élevée.</li><li>Égalité : la carte avec de la neige (déblayée gratuitement).</li><li>Encore égalité : de gauche à droite, puis de haut en bas.</li></ul>
+           ${p.mist ? mistNote('card') : ''}`;
       return `<section class="card instr" data-step="card"><div class="kicker">Pat joue une carte${p.replaced ? ' · +1 neige' : ''}</div>
         ${why ? `<p class="hint">${why}${p.replaced ? ' Il gagne 1 neige.' : ''}</p>` : ''}
         ${head}
@@ -377,7 +386,7 @@ function isPlayerTurn() { return !!S && !S.pending && S.turn > 0 && !S.ended; }
 function ensurePet() { if (S && !S.pet) S.pet = newPet(); return S?.pet; }
 function finalScores() {
   if (!S?.ended) return null;
-  return { patTotal: score(S, scoreInputs).total, humanTotal: Number(scoreInputs.human) || 0 };
+  return { patTotal: score(S, scoreInputs).total, humanTotal: humanFinal(S, scoreInputs.human) };
 }
 function currentMood() {
   const elapsedMs = petCtl.key && isPlayerTurn() ? Date.now() - petCtl.startedAt : 0;
@@ -548,7 +557,8 @@ function renderSuivi() {
 function renderScore() {
   const sc = score(S, scoreInputs);
   const b = LEVEL_BONUS[S.level];
-  const w = winner(sc.total, Number(scoreInputs.human) || 0);
+  const hf = humanFinal(S, scoreInputs.human);
+  const w = winner(sc.total, hf);
   return `<div class="grid-2"><section class="card" data-step="score"><div class="kicker">Décompte de Pat · niveau ${S.level}</div>
     <div class="field"><span class="lbl">Valeur imprimée des cartes de sa ville (${S.city} cartes)</span>${stepper('cardPoints', scoreInputs.cardPoints, 0, 300)}</div>
     <div class="field"><span class="lbl">Quêtes réalisées ${scrollIcon('plaine')}${scrollIcon('montagne')} (${S.quests.count})</span>${stepper('questPoints', scoreInputs.questPoints ?? S.quests.points, 0, 200)}</div>
@@ -568,9 +578,10 @@ function renderScore() {
   </section>
   <section class="card"><div class="kicker">Ton score</div>
     <div class="field"><span class="lbl">Ton total</span>${stepper('human', scoreInputs.human, 0, 400)}</div>
+    ${scoreCampaignRows(S, scoreInputs.human, hf)}
     <div class="verdict ${w === 'pat' ? 'pat' : 'you'}" id="verdict">${w === 'pat'
-      ? `Pat l’emporte (${sc.total} contre ${Number(scoreInputs.human) || 0})${sc.total === (Number(scoreInputs.human) || 0) ? ' : en cas d’égalité, Pat gagne' : ''}. Le Roi des Bandits règne sur Silverfrost !`
-      : `Victoire ! ${Number(scoreInputs.human)} contre ${sc.total}. Pat part en exil.`}</div>
+      ? `Pat l’emporte (${sc.total} contre ${hf})${sc.total === hf ? ' : en cas d’égalité, Pat gagne' : ''}. Le Roi des Bandits règne sur Silverfrost !`
+      : `Victoire ! ${hf} contre ${sc.total}. Pat part en exil.`}</div>
     ${S.ended ? `<div class="pet-final">${petPanel(currentMood())}</div>` : ''}
     <button class="btn ghost block" style="margin-top:12px" id="btn-new2">Nouvelle partie</button>
   </section></div>`;
@@ -606,7 +617,8 @@ function renderRegles() {
     <li>Printemps, tous les ouvriers posés et moins de 15 cartes : les cases 🐾 deviennent des cartes (+1 neige).</li>
     <li>Ouvriers de départ en été : réglable (2 par défaut, la p.6 n’a pas été numérisée).</li>
     <li>Fureur de l’hiver déclenchée par Pat : non traitée par les règles, à toi de décider.</li></ul>
-  </section>`;
+  </section>
+  ${rulesSection()}`;
 }
 
 // ---------- événements ----------
@@ -619,6 +631,7 @@ function bind() {
       input.dispatchEvent(new Event('change', { bubbles: true }));
     }));
   });
+  bindCampaign(campCtx);
   if (!S) {
     document.querySelectorAll('[data-level]').forEach((b) => b.addEventListener('click', () => { setupDraft.level = Number(b.dataset.level); readSetup(); render(); }));
     $('[name="loop"]')?.addEventListener('change', readSetup);
@@ -676,8 +689,28 @@ function readSetup() {
   setupDraft.loop = checked('loop');
   setupDraft.startWorkers = Math.max(1, val('startWorkers') || 2);
 }
+const campCtx = {
+  S: () => S,
+  act,
+  render,
+  toast,
+  finalScores,
+  startGame(gc) {
+    S = newGame(gameOptions(camp.c, { loopTactiques: setupDraft.loop, startWorkers: setupDraft.startWorkers }));
+    S.campaign = gc;
+    history = [];
+    scoreInputs = { cardPoints: 0, mostSnow: false, human: 0, questPoints: null };
+    showChecklist = true; tab = 'tour'; save(); render();
+  },
+  endGame() { clearGame(); render(); },
+};
+function clearGame() {
+  S = null; history = []; showChecklist = false; tab = 'tour';
+  localStorage.removeItem(KEY); localStorage.removeItem(HKEY); localStorage.removeItem(SKEY);
+}
 function confirmNew() {
   if (S && !confirm('Commencer une nouvelle partie ? La partie en cours sera effacée de cet appareil.')) return;
+  camp.view = null;
   S = null; history = []; showChecklist = false; tab = 'tour';
   localStorage.removeItem(KEY); localStorage.removeItem(HKEY); localStorage.removeItem(SKEY);
   $('#settings').close?.();
