@@ -3,6 +3,8 @@ const ASSETS = [
   './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'pet.js', 'voice.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'img/lynx.jpg',
 ];
+// Campagne « L'année du Lapin » (ligne séparée : le fichier sw.js modifié suffit à réinstaller le cache).
+ASSETS.push('campagne.js', 'campagne-ui.js', 'campagne.css');
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });

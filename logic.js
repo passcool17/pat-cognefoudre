@@ -61,11 +61,19 @@ export function patTokensFree(s) {
   return PAT_TOKENS - s.patTokensVallee - s.patTokensFixed;
 }
 
-export function newGame({ level = 2, loopTactiques = false, startWorkers = 2, seed } = {}) {
+// Campagne, Année 3 (« La brume de l'incertitude ») : la Vallée, les quêtes et les créatures
+// de la montagne sont face cachée. Les étapes concernées portent mist: true pour que l'écran
+// donne les consignes de Pat adaptées. Rien ne change dans le moteur lui-même.
+function withMist(s, pending) {
+  if (s.opts?.mist && (pending.kind !== 'card' || pending.src === 'vallee')) pending.mist = true;
+  return pending;
+}
+
+export function newGame({ level = 2, loopTactiques = false, startWorkers = 2, seed, mist = false } = {}) {
   const s = {
     v: 1,
     level,
-    opts: { loopTactiques, startWorkers },
+    opts: { loopTactiques, startWorkers, mist },
     seed: (seed ?? Math.floor(Math.random() * 2 ** 32)) >>> 0,
     season: 'ete',
     humanPrepared: { automne: false, hiver: false, printemps: false },
@@ -214,7 +222,7 @@ function resolvePlace(s, choice, { snow = false } = {}) {
   const k = locKind(p.loc);
   if (k === 'balise') {
     const b = baliseOf(p.loc);
-    s.pending = { kind: 'balise', loc: p.loc, value: b.value };
+    s.pending = withMist(s, { kind: 'balise', loc: p.loc, value: b.value });
     return s;
   }
   if (k === 'voyage') {
@@ -223,7 +231,7 @@ function resolvePlace(s, choice, { snow = false } = {}) {
     return s;
   }
   if (k === 'guilde') {
-    s.pending = { kind: 'guildQuest', via: p.via };
+    s.pending = withMist(s, { kind: 'guildQuest', via: p.via });
     return s;
   }
   return finishAction(s);
@@ -273,7 +281,7 @@ function tactiques(s, fromLoc, viaIdx, reason) {
 }
 
 function beginCard(s, src, { replaced = false, why = null } = {}) {
-  s.pending = { kind: 'card', src, colors: COMPLOT_BY_ID[s.cur.complot].colors, replaced, why };
+  s.pending = withMist(s, { kind: 'card', src, colors: COMPLOT_BY_ID[s.cur.complot].colors, replaced, why });
   return s;
 }
 
@@ -292,7 +300,7 @@ function resolveCard(s, { color, snow = false, patToken = false } = {}) {
 
 function finishAction(s) {
   if (s.cur && s.cur.usedTactiques && !s.cur.tokenDone) {
-    s.pending = { kind: 'patToken', colors: COMPLOT_BY_ID[s.cur.complot].colors, available: patTokensFree(s) };
+    s.pending = withMist(s, { kind: 'patToken', colors: COMPLOT_BY_ID[s.cur.complot].colors, available: patTokensFree(s) });
     return s;
   }
   if (s.season === 'printemps' && workersLeft(s) === 0 && s.city >= 15) {
