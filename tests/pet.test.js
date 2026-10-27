@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { LINES, MOODS, TIMING, computeMood, happiness, newPet, pickLine, fill } from '../pet.js';
+import { LINES, MOODS, TIMING, MIN_VALUE, computeMood, happiness, newPet, pickLine, fill, lineUsable } from '../pet.js';
 import { newGame, startTurn, answer } from '../logic.js';
 import { makeRng, playGame } from './sim.js';
 
@@ -61,11 +61,12 @@ test('répliques : aucune répétition avant d’avoir épuisé la liste', () =>
   for (const mood of Object.keys(MOODS)) {
     const n = LINES[mood].length;
     const seen = new Set();
-    for (let k = 0; k < n; k++) seen.add(pickLine(pet, mood, base(), rnd).i);
+    const rich = base({ city: 9, snow: 5, patTokensVallee: 2, patTokensFixed: 1 });
+    for (let k = 0; k < n; k++) seen.add(pickLine(pet, mood, rich, rnd).i);
     assert.equal(seen.size, n, mood);
     // La liste repart, sans redire tout de suite la dernière réplique.
     const last = pet.last.i;
-    const next = pickLine(pet, mood, base(), rnd);
+    const next = pickLine(pet, mood, rich, rnd);
     assert.notEqual(next.i, last);
   }
 });
@@ -74,14 +75,17 @@ test('répliques : survit à une sauvegarde JSON (localStorage / annuler)', () =
   let pet = newPet();
   const rnd = makeRng(9);
   const first = [];
-  for (let k = 0; k < 5; k++) first.push(pickLine(pet, 'grognon', base(), rnd).i);
+  for (let k = 0; k < 5; k++) first.push(pickLine(pet, 'grognon', base({ patTokensVallee: 3 }), rnd).i);
   pet = JSON.parse(JSON.stringify(pet));
-  for (let k = 0; k < LINES.grognon.length - 5; k++) assert.ok(!first.includes(pickLine(pet, 'grognon', base(), rnd).i));
+  for (let k = 0; k < LINES.grognon.length - 5; k++) assert.ok(!first.includes(pickLine(pet, 'grognon', base({ patTokensVallee: 3 }), rnd).i));
 });
 
 test('répliques : variables remplacées', () => {
   const t = fill('{city} cartes, {snow} neige, {tokens} jetons', base({ city: 7, snow: 3, patTokensVallee: 2, patTokensFixed: 1 }));
   assert.equal(t, '7 cartes, 3 neige, 3 jetons');
+  assert.equal(fill('{city|carte|cartes}', base({ city: 1 })), '1 carte');
+  assert.equal(fill('{city|carte|cartes}', base({ city: 0 })), '0 carte');
+  assert.equal(fill('{tokens|jeton Pat|jetons Pat}', base({ patTokensVallee: 2, patTokensFixed: 1 })), '3 jetons Pat');
   for (const l of Object.values(LINES).flat()) assert.ok(!/\{/.test(fill(l, base())), l);
 });
 
@@ -107,4 +111,33 @@ test('Tactiques : marque le tour comme « bloqué »', () => {
     assert.equal(s.stats.lastBlockedTurn, s.turn);
     assert.ok(s.stats.tactiques >= 1);
   }
+});
+
+test('répliques chiffrées : jamais quand le nombre est trop petit pour se vanter', () => {
+  const rnd = makeRng(5);
+  const numbered = (mood) => LINES[mood].map((l, i) => (/\{/.test(l) ? i : -1)).filter((i) => i >= 0);
+  assert.ok(numbered('content').length >= 2 && numbered('grognon').length >= 1);
+  // Début de partie : 0 carte, 0 neige, 0 jeton → aucune réplique chiffrée, même après plusieurs tours de liste.
+  for (const [city, snow, tok] of [[0, 0, 0], [2, 1, 1], [1, 0, 0]]) {
+    const s = base({ city, snow, patTokensVallee: tok, patTokensFixed: 0 });
+    const pet = newPet();
+    for (let k = 0; k < 60; k++) {
+      for (const mood of ['content', 'grognon']) {
+        const r = pickLine(pet, mood, s, rnd);
+        assert.ok(!numbered(mood).includes(r.i), `${mood} ${city}/${snow}/${tok} : ${r.text}`);
+        assert.ok(!/(^|\D)[01] cartes|\b0 jeton/.test(r.text), r.text);
+      }
+    }
+  }
+  // Au seuil, elles redeviennent possibles et s’accordent correctement.
+  const s = base({ city: MIN_VALUE.city, snow: MIN_VALUE.snow, patTokensVallee: MIN_VALUE.tokens, patTokensFixed: 0 });
+  for (const l of [...LINES.content, ...LINES.grognon].filter((l) => /\{/.test(l))) {
+    assert.ok(lineUsable(l, s), l);
+    assert.ok(/3 cartes|: 2 !|2 jetons Pat/.test(fill(l, s)), fill(l, s));
+  }
+  // Toute la liste reste tirable sans boucle infinie quand certaines sont exclues.
+  const pet = newPet();
+  const seen = new Set();
+  for (let k = 0; k < 40; k++) seen.add(pickLine(pet, 'content', base({ city: 0 }), rnd).i);
+  assert.equal(seen.size, LINES.content.length - numbered('content').length);
 });
