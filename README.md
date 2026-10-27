@@ -24,7 +24,16 @@ Fonctionne hors ligne une fois ouverte.
 - App installée : elle s’ouvre directement sans barres (`display: fullscreen`), le bouton est alors masqué.
 - iPhone : Safari ne permet pas le plein écran d’une page ; ajoute l’app à l’écran d’accueil (Partager → Sur l’écran d’accueil) pour l’ouvrir sans barres.
 
-## Pat, compagnon de jeu
+## Musique de fond
+
+Musique : *Snowbound Pass*, par passcool17 (instrumental fait avec Suno).
+- Elle démarre au premier toucher (règle des navigateurs) et tourne en boucle pendant la partie, à volume modeste (28 %).
+- Quand Pat parle (réplique simple ou numérotée en 3 morceaux), elle baisse à 10 % en 300 ms, puis remonte.
+- Bouton 🎵 en haut (barré quand elle est coupée) et volume dans ⚙️ → 🎵 Musique. Ces réglages sont gardés sur l’appareil et ne dépendent pas du muet de la voix.
+- Elle se met en pause quand l’app passe en arrière-plan, puis reprend au retour.
+- Hors ligne : le service worker garde le fichier après sa première lecture (il n’est pas préchargé à l’installation).
+- iPhone : la musique suit le bouton silencieux de l’appareil (en mode silencieux, on ne l’entend pas).
+
 Pendant ton tour, Pat le roi bandit reste à l’écran, sans cadre, fondu dans la neige : un Pat peint (boucles de Créa) par humeur, avec deux boucles de 4,5 s chacune, « repos » quand il se tait et « parle » (gueule animée) quand on l’entend. Fondu d’environ 200 ms entre repos et parle, et entre humeurs.
 - **Il parle** au début de ton tour, parfois pendant (≈ 20-30 s, une fois sur quatre il se tait), puis s’impatiente si tu prends ton temps (50 s, puis toutes les 75 s). Touche Pat ou *Parler* pour une réplique.
 - **Son humeur suit la partie** : 😼 Content de lui, 😾 Grognon (bloqué ce tour-ci ou partie difficile), ⏳ Impatient, 😴 Endormi (hiver), 👑 Triomphant, 🙄 Boudeur (à la fin, selon les scores). 96 répliques, 16 par humeur, sans répétition tant qu’une liste n’est pas épuisée.
@@ -72,6 +81,7 @@ npm run test:campagne-e2e  # campagne complète (4 années, une défaite) sur t�
 npm run test:pet-e2e  # compagnon : réplique, toucher, minuterie (horloge simulée), muet, réglages voix, lecture audio réelle, secours synthèse
 npm run test:realiste-e2e  # Pat peint : repos/parle pendant l’audio, humeurs, réplique numérotée en 3 morceaux, mouvement réduit, vidéo en panne
 npm run test:plein-ecran-e2e  # plein écran : bouton, bascule, retour proposé, API absente, app installée, astuce iPhone
+npm run test:musique-e2e  # musique : premier toucher, baisse quand Pat parle (chaîne comprise), rampes, 🎵 et volume mémorisés, onglet caché, hors ligne
 ```
 Voix : les mp3 viennent d’ElevenLabs (voix « C », faite par le bot Voix), déposés dans `/workspace/shared/voix-pat/final/` (`<id>.mp3`, plus les morceaux de `segments.json`). Pour les importer :
 ```
@@ -79,6 +89,11 @@ node tools/voix/import.mjs     # copie les voix ElevenLabs dans audio/ ; un id a
 node tools/voix/manifest.mjs   # réécrit audio/liste.js et audio/liste.json
 ```
 Si tu modifies une réplique dans `pet.js`, il faut redemander le mp3 au bot Voix. (`tools/voix/build.sh`, `best.py` et `render.py` sont les anciens outils Piper « gilles », gardés pour mémoire.) Puis augmenter `CACHE` dans `sw.js` pour que les téléphones récupèrent les nouveaux fichiers.
+
+### Musique
+- `music/musique-fond.mp3` : *Snowbound Pass* réencodé en mp3 96 kb/s stéréo (≈ 2,0 Mo, 2 min 54 s) par `tools/musique/encode.sh` (ffmpeg), depuis `/workspace/shared/voix-pat/musique/musique-fond.mp3`.
+- Boucle sans blanc : la fin du morceau (fondu de sortie) est fondue dans ses 4 premières secondes (intro calme), et le fichier commence 4 s après le début du morceau. La dernière seconde enchaîne donc naturellement sur la première.
+- `music.js` lit le fichier décodé en Web Audio (`AudioBufferSourceNode` en boucle, en sautant le silence ajouté par l’encodeur) et règle le volume avec un `GainNode` (rampes). Sans Web Audio : élément `<audio loop>`.
 
 ### Pat peint (vidéos)
 - `video/pat-<humeur>-repos|parle.webm|mp4` : boucles de Créa (4,5 s, 24 i/s) réduites en 540×720, VP9 + H.264 ; `video/pat-<humeur>.jpg` : image fixe. Réencoder : `tools/anim/encode.sh` (ffmpeg).

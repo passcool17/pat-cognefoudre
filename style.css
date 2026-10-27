@@ -301,6 +301,7 @@ hr { border: 0; border-top: 1px dashed rgba(59, 31, 77, .3); width: 100%; }
 .icon-btn { display: inline-grid; place-items: center; flex: none; cursor: pointer; }
 .icon-btn[hidden] { display: none; }
 .fs-btn { opacity: .85; }
+.music-btn.off { opacity: .5; filter: grayscale(1); }
 .fs-btn:hover, .fs-btn:focus-visible { opacity: 1; }
 html:fullscreen, html:-webkit-full-screen { background: var(--night); }
 .fs-hint {
@@ -312,3 +313,13 @@ html:fullscreen, html:-webkit-full-screen { background: var(--night); }
 }
 .fs-hint button { background: rgba(247, 240, 225, .12); border: 1px solid rgba(247, 240, 225, .3); color: var(--cream); border-radius: 10px; min-width: 36px; min-height: 36px; font: 600 .9rem system-ui, sans-serif; cursor: pointer; }
 .fs-hint .fs-go { padding: 0 12px; background: var(--red); border-color: var(--red-dark); }
+
+/* Téléphone étroit : trois boutons dans l'en-tête (plein écran, musique, réglages) sans couper le titre. */
+@media (max-width: 420px) {
+  .top { gap: 8px; }
+  .avatar { width: 44px; height: 44px; }
+  h1 { font-size: 1.12rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .icon-btn { width: 40px; height: 40px; font-size: 1.15rem; }
+}
+.music-btn { position: relative; }
+.music-btn.off::after { content: ""; position: absolute; left: 9px; right: 9px; top: 50%; height: 2px; background: var(--cream); transform: rotate(-40deg); border-radius: 2px; }

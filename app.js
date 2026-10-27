@@ -14,9 +14,10 @@ import {
   voiceSettings, saveVoice, speak, stopSpeaking, unlockOnFirstGesture, currentVoice, speechSupported, recordedCount,
 } from './voice.js';
 import { initFullscreen } from './fullscreen.js';
+import { initMusic, musicSettings, setMusicOn, setMusicVolume } from './music.js';
 import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
 
-export const VERSION = '1.6.0';
+export const VERSION = '1.6.1';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -725,6 +726,21 @@ $('#tabs').addEventListener('click', (e) => {
   tab = b.dataset.tab; render(); window.scrollTo(0, 0);
 });
 initFullscreen($('#btn-fullscreen'));
+// Musique de fond : bouton 🎵 de l'en-tête (marche/arrêt) et volume dans ⚙️, indépendants de la voix.
+function syncMusicUI() {
+  const b = $('#btn-music');
+  b.setAttribute('aria-pressed', String(musicSettings.on));
+  b.classList.toggle('off', !musicSettings.on);
+  b.title = musicSettings.on ? 'Musique : activée' : 'Musique : coupée';
+  $('#opt-music').checked = musicSettings.on;
+  $('#opt-music-volume').value = String(musicSettings.volume);
+  $('#opt-music-volume').disabled = !musicSettings.on;
+}
+initMusic();
+syncMusicUI();
+$('#btn-music').addEventListener('click', () => { setMusicOn(!musicSettings.on); syncMusicUI(); });
+$('#opt-music').addEventListener('change', (e) => { setMusicOn(e.target.checked); syncMusicUI(); });
+$('#opt-music-volume').addEventListener('input', (e) => setMusicVolume(e.target.value));
 $('#btn-settings').addEventListener('click', () => { $('#app-version').textContent = `Version ${VERSION}`; syncVoiceUI(); $('#settings').showModal(); });
 $('#opt-voice').addEventListener('change', (e) => setVoiceOn(e.target.checked));
 $('#opt-volume').addEventListener('input', (e) => { voiceSettings.volume = Number(e.target.value); saveVoice(); });

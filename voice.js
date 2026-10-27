@@ -123,8 +123,9 @@ function speakTTS(text, my, onEnd) {
     u.pitch = 0.7;
     u.rate = 0.88;
     u.volume = voiceSettings.volume;
-    u.onend = () => { if (my === token) onEnd(true); };
-    u.onerror = () => { if (my === token) onEnd(false); };
+    u.onend = () => { if (my === token) { voix(false); onEnd(true); } };
+    u.onerror = () => { if (my === token) { voix(false); onEnd(false); } };
+    voix(true);
     s.speak(u);
     return true;
   } catch { onEnd(false); return false; }
