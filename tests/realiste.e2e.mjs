@@ -65,15 +65,24 @@ for (const vp of [{ name: 'telephone', width: 390, height: 844 }, { name: 'table
     }
     if (vp.name === 'tablette') await page.screenshot({ path: `${SHOTS}/realiste-tablette.png` });
 
-    // 3. Parole minutée (synthèse vocale) : la bouche s'ouvre puis se referme
+    // 3. Vraie réplique enregistrée (mp3 joué par voice.js) : la bouche suit l'audio via le graphe de voice.js
     await page.click('#btn-talk');
-    assert(await page.evaluate(() => window.__patAvatar.talking && window.__patAvatar.source === 'timed'), 'pas de parole minutée');
+    await page.waitForTimeout(700);
+    const rv = await page.evaluate(() => ({ src: window.__patAvatar.source, max: window.__patAvatar.maxOpen, talking: window.__patAvatar.talking }));
+    assert(rv.src === 'audio' && rv.talking && rv.max > 0.3, `réplique enregistrée : bouche non pilotée par l'audio ${JSON.stringify(rv)}`);
+    assert((await page.$eval('.pat-av', (e) => e.dataset.mood)) === (await page.getAttribute('#pet', 'data-mood')), 'humeur de la vidéo ≠ humeur de la réplique');
+    if (vp.name === 'telephone') await page.screenshot({ path: `${SHOTS}/realiste-parle.png` });
+    await page.waitForFunction(() => !window.__patAvatar.talking && window.__patAvatar.open === 0, null, { timeout: 15000 });
+
+    // 3b. En muet : parole minutée, la bouche s'ouvre puis se referme
+    await page.click('#btn-mute');
+    await page.click('#btn-talk');
+    assert(await page.evaluate(() => window.__patAvatar.talking && window.__patAvatar.source === 'timed'), 'pas de parole minutée en muet');
     await page.waitForTimeout(700);
     const tm = await page.evaluate(() => window.__patAvatar.maxOpen);
     assert(tm > 0.3, `bouche peu ouverte en parole minutée (${tm.toFixed(2)})`);
-    assert((await page.$eval('.pat-av', (e) => e.dataset.mood)) === (await page.getAttribute('#pet', 'data-mood')), 'humeur de la vidéo ≠ humeur de la réplique');
-    if (vp.name === 'telephone') await page.screenshot({ path: `${SHOTS}/realiste-parle.png` });
-    await page.waitForFunction(() => !window.__patAvatar.talking && window.__patAvatar.open === 0, null, { timeout: 4000 });
+    await page.waitForFunction(() => !window.__patAvatar.talking && window.__patAvatar.open === 0, null, { timeout: 6000 });
+    await page.click('#btn-mute');
 
     // 4. Voix enregistrée (événement pat:audio) : la bouche suit l'amplitude via l'AnalyserNode
     await page.evaluate(async () => {
@@ -93,7 +102,7 @@ for (const vp of [{ name: 'telephone', width: 390, height: 844 }, { name: 'table
 
     // 5. Aucune erreur console
     assert(errors.length === 0, `erreurs console : ${errors.join(' | ')}`);
-    results.push(`✓ ${vp.name} : vidéos/humeurs, bouche minutée (max ${tm.toFixed(2)}), bouche audio (max ${au.max.toFixed(2)})`);
+    results.push(`✓ ${vp.name} : vidéos/humeurs, réplique mp3 (max ${rv.max.toFixed(2)}), bouche minutée (max ${tm.toFixed(2)}), bouche audio (max ${au.max.toFixed(2)})`);
   } catch (e) { failed++; results.push(`✗ ${vp.name} : ${e.message}`); await page.screenshot({ path: `${SHOTS}/realiste-echec-${vp.name}.png` }).catch(() => {}); }
   await ctx.close();
 }

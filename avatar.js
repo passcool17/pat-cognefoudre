@@ -74,7 +74,7 @@ function build() {
   st.ctx = st.canvas.getContext('2d');
   st.off = document.createElement('canvas');
   st.offCtx = st.off.getContext('2d');
-  window.__patAvatar = { get mood() { return st.mood; }, get open() { return st.open; }, get maxOpen() { return st.maxOpen; }, get frames() { return st.frames; }, get source() { return st.analyser && st.audio && !st.audio.paused ? 'audio' : 'timed'; }, get talking() { return st.talking; }, resetMax() { st.maxOpen = 0; } };
+  window.__patAvatar = { get mood() { return st.mood; }, get open() { return st.open; }, get maxOpen() { return st.maxOpen; }, get frames() { return st.frames; }, get source() { return st.audio && !st.audio.paused && st.sources.has(st.audio) ? 'audio' : 'timed'; }, get talking() { return st.talking; }, resetMax() { st.maxOpen = 0; } };
   document.addEventListener('visibilitychange', () => { if (!document.hidden && st.video) playSafe(st.video); });
 }
 
@@ -137,13 +137,21 @@ if (typeof window !== 'undefined') {
 export function attachAudio(audio) {
   st.audio = audio || null;
   if (!audio) return false;
-  const c = ensureCtx();
-  if (!c || c.state !== 'running') return false;
   try {
     if (!st.sources.has(audio)) {
-      const src = c.createMediaElementSource(audio);
-      src.connect(st.analyser);
-      st.sources.set(audio, src);
+      const g = audio.__patGraph; // graphe déjà créé par voice.js : un élément n'accepte qu'une seule source
+      if (g?.ctx && g?.node) {
+        const an = g.ctx.createAnalyser();
+        an.fftSize = 512; an.smoothingTimeConstant = 0.3;
+        g.node.connect(an);
+        const mute = g.ctx.createGain(); mute.gain.value = 0; an.connect(mute); mute.connect(g.ctx.destination);
+        st.sources.set(audio, { ctx: g.ctx, an, buf: new Uint8Array(an.fftSize) });
+      } else {
+        const c = ensureCtx();
+        if (!c || c.state !== 'running') return false;
+        c.createMediaElementSource(audio).connect(st.analyser);
+        st.sources.set(audio, { ctx: c, an: st.analyser, buf: st.buf });
+      }
     }
   } catch { return false; }
   if (!st.talking) avatarTalk(true);
@@ -161,11 +169,12 @@ export function avatarTalk(on) {
 
 function audioLevel() {
   const a = st.audio;
-  if (!st.analyser || !a || a.paused || !st.sources.has(a) || st.actx.state !== 'running') return null;
-  st.analyser.getByteTimeDomainData(st.buf);
+  const t = a && !a.paused ? st.sources.get(a) : null;
+  if (!t || t.ctx.state !== 'running') return null;
+  t.an.getByteTimeDomainData(t.buf);
   let sum = 0;
-  for (let i = 0; i < st.buf.length; i++) { const x = (st.buf[i] - 128) / 128; sum += x * x; }
-  return Math.sqrt(sum / st.buf.length);
+  for (let i = 0; i < t.buf.length; i++) { const x = (t.buf[i] - 128) / 128; sum += x * x; }
+  return Math.sqrt(sum / t.buf.length);
 }
 
 function kick() { if (!st.raf && st.root) st.raf = requestAnimationFrame(tick); }
