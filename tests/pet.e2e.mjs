@@ -1,5 +1,6 @@
 // E2E du compagnon : écran « Tour du joueur », toucher pour parler, répliques minutées
-// (horloge simulée), muet, réglages voix, sauvegarde et annulation. Téléphone + tablette.
+// (horloge simulée), voix enregistrée, muet, réglages voix, sauvegarde et annulation. Téléphone + tablette.
+// Puis lecture audio réelle dans Chromium et secours synthèse vocale quand un fichier manque.
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 import { LINES } from '../pet.js';
@@ -30,6 +31,18 @@ const speechStub = () => {
   window.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; this.pitch = 1; this.rate = 1; this.volume = 1; this.lang = ''; this.voice = null; } };
 };
 
+// Lecture audio simulée (horloge simulée) : enregistre chaque lecture et finit après 30 ms.
+const audioStub = () => {
+  window.__plays = [];
+  HTMLMediaElement.prototype.play = function play() {
+    const src = this.src.split('/').pop();
+    window.__plays.push({ src, volume: this.volume, muted: this.muted, gain: window.__patAudio?.gain() });
+    if (src !== 'silence.mp3') setTimeout(() => this.dispatchEvent(new Event('ended')), 30);
+    return Promise.resolve();
+  };
+  HTMLMediaElement.prototype.pause = function pause() {};
+};
+
 function assert(c, msg) { if (!c) throw new Error(msg); }
 const browser = await chromium.launch({ executablePath: process.env.CHROME || '/usr/bin/google-chrome', args: ['--no-sandbox'] });
 const results = []; let failed = 0;
@@ -37,6 +50,7 @@ const results = []; let failed = 0;
 for (const vp of viewports) {
   const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'fr-CA' });
   await ctx.addInitScript(speechStub);
+  await ctx.addInitScript(audioStub);
   // Hasard reproductible : la partie de test est toujours la même (Pat non bloqué au tour 1).
   await ctx.addInitScript((seed) => {
     let a = seed >>> 0;
@@ -49,7 +63,9 @@ for (const vp of viewports) {
   page.on('dialog', (d) => d.accept());
   const bubble = () => page.textContent('#pet-bubble');
   const mood = () => page.getAttribute('#pet-mood', 'data-mood');
-  const spoken = () => page.evaluate(() => window.__utterances.filter((u) => u.text.trim()).length);
+  const spoken = () => page.evaluate(() => window.__utterances.filter((u) => u.text.trim()).length
+    + window.__plays.filter((p) => p.src !== 'silence.mp3').length);
+  const lastPlay = () => page.evaluate(() => window.__plays.filter((p) => p.src !== 'silence.mp3').at(-1));
   const shot = async (n) => { await page.waitForTimeout(120); await page.screenshot({ path: `${SHOTS}/${vp.prefix}${n}.png` }); };
 
   // Joue le tour de Pat ; si block, refuse le premier lieu proposé. Renvoie true s'il a été bloqué.
@@ -79,13 +95,14 @@ for (const vp of viewports) {
     await page.click('#btn-ready');
     await patTurn(false);
 
-    // 1. Écran du joueur, réplique d'accueil, voix grave fr-CA
+    // 1. Écran du joueur, réplique d'accueil, voix enregistrée (pas de synthèse)
     await page.waitForSelector('[data-player] #pet');
     const t1 = await bubble();
     assert(t1 && t1 !== '…', 'pas de réplique d’accueil');
     assert(await page.textContent('#btn-turn') === 'J’ai fini mon tour → Tour de Pat', 'bouton de fin de tour');
-    const u = await page.evaluate(() => window.__utterances.at(-1));
-    assert(u && u.voice === 'Amélie' && u.pitch === 0.7 && u.rate < 1, `voix inattendue ${JSON.stringify(u)}`);
+    const p1 = await lastPlay();
+    assert(p1 && /^(content|grognon|impatient|endormi|triomphant|boudeur)-\d+(-\d+)?\.mp3$/.test(p1.src), `audio inattendu ${JSON.stringify(p1)}`);
+    assert(!(await page.evaluate(() => window.__utterances.filter((u) => u.text.trim()).length)), 'synthèse utilisée alors que l’audio existe');
     assert((await mood()) === 'content', `humeur de départ ${await mood()}`);
     await shot('contenu');
 
@@ -123,14 +140,16 @@ for (const vp of viewports) {
     assert((await bubble()) !== t4 && (await spoken()) === n2, 'muet : bulle ou voix incorrecte');
     await page.click('#btn-settings');
     assert(!(await page.isChecked('#opt-voice')), 'réglage voix non synchronisé');
-    assert((await page.textContent('#voice-status')).includes('Amélie'), 'statut voix');
+    const status = await page.textContent('#voice-status');
+    assert(status.includes('Voix enregistrée') && status.includes('Amélie'), `statut voix : ${status}`);
     await page.check('#opt-voice');
     await page.fill('#opt-volume', '0.5');
     await page.dispatchEvent('#opt-volume', 'input');
     await shot('reglages-voix');
     await page.click('#settings button:not([type])');
     await page.click('#pet');
-    assert((await page.evaluate(() => window.__utterances.at(-1).volume)) === 0.5, 'volume non appliqué');
+    const pv = await lastPlay();
+    assert((pv.gain ?? pv.volume) === 0.5, `volume non appliqué ${JSON.stringify(pv)}`);
 
     // 5. Sauvegarde (rechargement) et annulation
     const t5 = await bubble();
@@ -156,11 +175,42 @@ for (const vp of viewports) {
     await shot('grognon');
 
     assert(!errors.length, 'Erreurs console : ' + errors.join(' | '));
-    results.push(`✔ ${vp.name} : accueil, toucher, minuterie (≤1 réplique avant 22 s, impatient à 50 s, relance à 75 s), muet, réglages, sauvegarde, annuler, grognon`);
+    results.push(`✔ ${vp.name} : accueil (voix enregistrée), toucher, minuterie (≤1 réplique avant 22 s, impatient à 50 s, relance à 75 s), muet, réglages, sauvegarde, annuler, grognon`);
   } catch (e) {
     failed++; results.push(`✘ ${vp.name} : ${e.message}`);
     await page.screenshot({ path: `/tmp/pet-erreur-${vp.name}.png` }).catch(() => {});
   }
+  await ctx.close();
+}
+// Lecture réelle (sans simulation) : le bouton « Tester la voix » joue audio/test.mp3 ;
+// si le fichier manque, la synthèse vocale prend le relais. Sans service worker pour que la route 404 s'applique.
+for (const missing of [false, true]) {
+  const name = missing ? 'secours synthèse (fichier manquant)' : 'lecture audio réelle';
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block', locale: 'fr-CA' });
+  await ctx.addInitScript(speechStub);
+  if (missing) await ctx.route('**/audio/test.mp3', (r) => r.fulfill({ status: 404, body: '' }));
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  page.on('console', (m) => { if (m.type() === 'error' && !(missing && /404/.test(m.text()))) errors.push(m.text()); });
+  try {
+    await page.goto(BASE);
+    await page.click('#btn-settings');
+    await page.evaluate(() => { window.__audioEvents = []; });
+    await page.click('#btn-voice-test');
+    await page.evaluate(() => ['playing', 'ended', 'error'].forEach((t) => window.__patAudio.el.addEventListener(t, () => window.__audioEvents.push(t))));
+    if (missing) {
+      await page.waitForFunction(() => window.__utterances.some((u) => u.text.includes('Roi des Bandits')), null, { timeout: 5000 });
+    } else {
+      await page.waitForFunction(() => window.__audioEvents.includes('ended') || window.__audioEvents.includes('error'), null, { timeout: 15000 });
+      const ev = await page.evaluate(() => window.__audioEvents);
+      const info = await page.evaluate(() => ({ src: window.__patAudio.el.src.split('/').pop(), dur: window.__patAudio.el.duration }));
+      assert(ev.includes('ended') && !ev.includes('error') && info.src === 'test.mp3' && info.dur > 1, `lecture : ${JSON.stringify({ ev, info })}`);
+      assert(!(await page.evaluate(() => window.__utterances.filter((u) => u.text.trim()).length)), 'synthèse utilisée en plus de l’audio');
+    }
+    assert(!errors.length, 'Erreurs console : ' + errors.join(' | '));
+    results.push(`✔ ${name}`);
+  } catch (e) { failed++; results.push(`✘ ${name} : ${e.message}`); }
   await ctx.close();
 }
 await browser.close();
