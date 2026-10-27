@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   newCampaign, chooseAlly, startYear, activateCritter, guildGoalDone, refugeeJoinsPat, humanPenalty, humanFinal,
   refugeesToFeed, nextReminder, dismissReminder, recordResult, gameOptions, yearStatus, needsAlly, setLevel,
-  YEARS, ALLIES, CRITTERS, INTERPRETATIONS, CREDITS,
+  YEARS, ALLIES, CRITTERS, PRECISIONS, CAS_NON_PREVUS, CREDITS,
 } from '../campagne.js';
 import { newGame, startTurn, answer, workersLeft, setHumanPrepared } from '../logic.js';
 import { makeRng, playGame, respond } from './sim.js';
@@ -16,7 +16,9 @@ test('données : 4 années complètes, alliés et créatures connus', () => {
   });
   assert.equal(YEARS[2].patRules.length, 3);
   for (const a of Object.values(ALLIES)) { assert.ok(CRITTERS[a.critter]); assert.ok(CRITTERS[a.other]); }
-  assert.ok(INTERPRETATIONS.length >= 5);
+  assert.ok(PRECISIONS.length >= 8);
+  assert.equal(CAS_NON_PREVUS.length, 2);
+  for (const t of [...PRECISIONS, ...CAS_NON_PREVUS]) assert.ok(!/à confirmer/.test(t), t);
   assert.match(CREDITS.author, /Otto Gregor/);
   assert.match(CREDITS.url, /^https:\/\/boardgamegeek\.com\//);
 });
@@ -123,7 +125,7 @@ test('année 2 : le réfugié gagné reste chez Pat aux saisons suivantes', () =
   refugeeJoinsPat(s);
   const r = makeRng(3);
   while (s.season === 'ete') { if (!s.pending) startTurn(s); respond(s, r); }
-  assert.equal(s.workers.normal, 2 + 1 + 1); // 2 au départ + réfugié + automne
+  assert.equal(s.workers.normal, 1 + 1 + 1); // 1 au départ (p.6) + réfugié + automne
 });
 
 test('année 2 : réfugiés à nourrir 2 / 3 / 5 / 5', () => {
@@ -174,7 +176,7 @@ test('année 3 : options de partie en mode brume', () => {
   const c = newCampaign({ level: 2 });
   assert.deepEqual(gameOptions(c), { level: 2, mist: false });
   c.year = 3;
-  assert.deepEqual(gameOptions(c, { startWorkers: 2 }), { startWorkers: 2, level: 2, mist: true });
+  assert.deepEqual(gameOptions(c, { loopTactiques: true }), { loopTactiques: true, level: 2, mist: true });
 });
 
 test('année 3 (moteur) : Vallée, Balise, Guilde et jeton Pat marqués « brume », pas la PILE', () => {

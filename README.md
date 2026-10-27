@@ -10,11 +10,11 @@ Application web (PWA) en français qui remplace les cartes Plan, Complot et Tact
 - **Suivi** : ouvriers, jetons Pat, feu, neige, ville, cartes face cachée, journal, corrections manuelles.
 - **Annuler**, sauvegarde automatique sur l’appareil, nouvelle partie (⚙️).
 - **Score** de Pat avec les bonus du niveau ; en cas d’égalité, Pat gagne.
-- **Règles** : ① la base Everdell, ② ce que *Silverfrost* change (résumé), ③ le mode solo de Pat par-dessus, et la liste des interprétations.
+- **Règles** : ① la base Everdell, ② ce que *Silverfrost* change (résumé), ③ le mode solo de Pat par-dessus, les précisions du livret (avec les pages) et les cas non prévus.
 
 Fonctionne hors ligne une fois ouverte.
 
-## Règles en trois couches (v1.7.0)
+## Règles en trois couches (v1.7.0, précisions v1.7.1)
 
 Source principale : le livret officiel *Everdell: Silverfrost* (2025, 24 p., règles solo p.17-21). Le résumé « Silverfrost vs Everdell » et le livret *Everdell* de 2018 ne servent qu’en appui.
 
@@ -69,27 +69,32 @@ D’après **The Year of the Rabbit** d’Otto Gregor (campagne non officielle, 
 - **Pendant la partie** : bandeau repliable (année, règles, créature) ; bouton « J’active ma créature » (elle se retourne) et « Quête de Guilde réussie » (Année 1, la remet face visible) ; rappels aux bons moments (réfugiés de l’Année 2, bandits de l’Année 4, interlude au printemps de l’Année 4) ; « +1 ouvrier pour Pat (réfugié) » (−5 PV pour toi en fin de partie).
 - **Année 3 : la brume** : consignes ajoutées aux étapes concernées (carte de la vallée, balise, quête de Guilde, jetons Pat).
 - **Fin d’année** : il faut battre Pat (l’égalité compte comme une défaite) ; on rejoue l’année en cas de défaite. Une créature finie face cachée part à la défausse. Épilogue après l’Année 4.
-- Interprétations de la campagne (aussi listées dans l’onglet Règles) :
-  - Les quêtes « bleues » de la campagne sont les Quêtes en montagne (publiques), les « vertes » les Quêtes en plaine.
-  - Année 1 : au printemps, tu gagnes ton garde forestier + 1 ouvrier normal (les 2 ouvriers de la saison).
-  - Années 2 et 4 : tu commences avec 1 garde forestier, 1 ouvrier normal et l’apprenti (3 figurines).
-  - Année 2 : un réfugié qui rejoint les bandits devient tout de suite un ouvrier normal de Pat, utilisable dès cette saison. En fin de partie, il ne compte que pour le −5.
-  - Année 3 : « un de ses propres objectifs » = la quête du haut de la pile Quête de Pat.
-  - Année 3 : la neige d’une carte face cachée prise par Pat va dans sa réserve, comme d’habitude.
-  - Année 3 : la campagne ne dit rien des jetons Pat. L’app garde l’ordre habituel sur les cartes face visible et, s’il n’y en a aucune, applique l’ordre des cartes face cachée.
-  - Année 4 : les bandits ne touchent que toi. Pat n’en reçoit pas et n’en chasse pas.
-  - Pas de score cumulé : seule compte la victoire de chaque année.
-  - Les noms des Grosses Créatures sont ceux de la campagne (anglais) ; la VF des cartes n’a pas été vérifiée.
+- Précisions de la campagne (aussi dans l’onglet Règles), vérifiées dans le texte de la campagne et le livret :
+  - Quêtes « bleues » = Quêtes en montagne (publiques), « vertes » = Quêtes en plaine (campagne Année 1 ; livret p.6).
+  - Année 1 : ton garde forestier est l’un de tes 2 nouveaux ouvriers du printemps (campagne Année 1 ; livret p.6).
+  - Années 2 et 4 : 1 garde forestier, 1 ouvrier normal et l’apprenti, soit 3 figurines (campagne).
+  - Année 2 : un réfugié qui rejoint les bandits va dans la réserve d’ouvriers de Pat (ouvrier normal, garde forestier toujours en dernier) ; en fin de partie, il ne compte que pour le −5 (campagne Année 2 ; livret p.19).
+  - Année 3 : « un de ses propres objectifs » = la quête du haut de la pile Quête de Pat (campagne ; livret p.17 et p.19). La neige d’une carte face cachée prise par Pat va dans sa réserve (campagne).
+  - Année 4 : les bandits arrivent avec la neige de ta ville ; Pat n’a jamais de neige dans sa ville, donc pas de bandits (campagne ; livret p.21).
+  - Pas de score cumulé : il faut battre Pat chaque année (campagne).
+  - Noms des Grosses Créatures : ceux de la campagne (en anglais).
+- Cas non prévus par la campagne (choix provisoire de l’app) :
+  - Année 3 : jeton Pat dans la brume, ordre habituel sur les cartes face visible, sinon ordre des cartes face cachée.
+  - Année 4 : bandit en trop sur un lieu du plateau où Pat va : pas de consigne particulière.
 
-## Interprétations (à confirmer)
-- On lit le quart du Complot qui recouvre le coin du Plan en cours.
-- Niveau 4 : pile de 3 quêtes en plaine + 2 en montagne (5 quêtes, livret Silverfrost p.17).
-- Carte Tactiques : pas de rebouclage par défaut (option dans ⚙️). Au bout de la liste, Pat joue la carte du coin (+1 neige).
-- « Balise ? » de la carte Tactiques : valeur de balise du Complot en cours.
-- Guilde sans quête possible : l’ouvrier se déplace avec la carte Tactiques.
-- Printemps, tous les ouvriers posés et moins de 15 cartes : les cases ouvrier deviennent des cartes (+1 neige).
-- Ouvriers de départ en été : réglable, 2 par défaut (page 6 non numérisée).
-- Fureur de l’hiver déclenchée par Pat : non traitée.
+## Précisions du livret (mode solo)
+- On lit le quart du Complot qui recouvre le coin du Plan en cours (schéma p.18).
+- En été, Pat a 2 ouvriers : 1 ouvrier normal + le garde forestier (mise en place p.6), puis +1 en automne, +1 en hiver, +2 au printemps.
+- Pile Quête de Pat (p.17) : niveau 1 = 5 en plaine ; niveaux 2 et 3 = 4 + 1 en montagne ; niveau 4 = 3 + 2.
+- « Balise ? » de la carte Tactiques : valeur de balise ailleurs sur le Complot en cours (p.19).
+- Guilde sans quête possible : la carte Tactiques déplace l’ouvrier, et un jeton Pat va dans la Vallée (p.19).
+- Plus d’ouvriers (au printemps aussi, tant qu’il a moins de 15 cartes) : les cases ouvrier deviennent des cartes (+1 neige) (p.19 et p.21).
+- Jeton Pat sur une pile de doubles : Pat prend toute la pile en se préparant ou en fin de partie (p.20).
+- Dons à Pat : il garde le feu, une carte va face cachée, toute autre ressource retourne à la réserve (p.19 et p.21).
+
+## Cas non prévus par le livret (choix provisoire)
+- Carte Tactiques au bout de la liste : pas de rebouclage par défaut (option dans ⚙️), Pat joue la carte du coin (+1 neige).
+- Fureur de l’hiver quand Pat se prépare le premier pour l’hiver : non traitée par l’app.
 
 ## Développement
 Vanilla HTML/CSS/JS, sans dépendance à l’exécution.

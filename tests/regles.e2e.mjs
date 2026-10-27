@@ -43,7 +43,7 @@ await page.click('[data-level="2"]'); await page.click('#btn-start'); await page
 await step('Règles : 3 couches (Everdell, changements Silverfrost, solo Pat), 9 points du résumé', async () => {
   await page.click('[data-tab="regles"]');
   const order = await page.evaluate(() => [...document.querySelectorAll('.rules h3')].map((h) => h.id).filter(Boolean));
-  assert(order.join() === 'everdell,silverfrost,solo', JSON.stringify(order));
+  assert(order.join() === 'everdell,silverfrost,solo,non-prevus', JSON.stringify(order));
   const n1 = await page.$$eval('ul.everdell li', (l) => l.length);
   assert(n1 === 7, `${n1} règles Everdell`);
   const n = await page.$$eval('ul.silverfrost li', (l) => l.length);
@@ -54,6 +54,31 @@ await step('Règles : 3 couches (Everdell, changements Silverfrost, solo Pat), 9
   await page.screenshot({ path: `${SHOTS}/regles-everdell.png` });
   await page.evaluate(() => document.querySelector('#silverfrost').scrollIntoView());
   await page.screenshot({ path: `${SHOTS}/regles-silverfrost.png` });
+});
+
+await step('Règles : plus de note « à confirmer », pages du livret citées, cas non prévus à part', async () => {
+  const txt = (await page.textContent('#app'));
+  assert(!/à confirmer/i.test(txt), 'il reste « à confirmer »');
+  assert(!(await page.$('.rules .flag')), 'il reste un drapeau dans les règles');
+  const solo = await page.textContent('.rules');
+  for (const w of ['schéma p.18', 'mise en place p.6', '1 ouvrier normal + le garde forestier', 'toute la pile', 'il garde le feu (p.21)', '« Balise ? »', 'p.17']) assert(solo.includes(w), w);
+  const np = await page.$$eval('ul.non-prevus li', (l) => l.length);
+  assert(np === 2, `${np} cas non prévus`);
+  const shots = [['#solo', 'confirm-solo-tour.png'], ['#non-prevus', 'confirm-non-prevus.png']];
+  for (const [sel, file] of shots) {
+    await page.evaluate((s) => { const el = document.querySelector(s); window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 70); }, sel);
+    await page.waitForTimeout(150);
+    await page.screenshot({ path: `${SHOTS}/${file}` });
+  }
+  await page.evaluate(() => { const h = [...document.querySelectorAll('.rules h3')].find((x) => x.textContent === 'Ouvriers'); window.scrollTo(0, h.getBoundingClientRect().top + window.scrollY - 70); });
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: `${SHOTS}/confirm-solo-ouvriers.png` });
+  await page.evaluate(() => { const h = [...document.querySelectorAll('.rules h3')].find((x) => x.textContent === 'Saisons'); window.scrollTo(0, h.getBoundingClientRect().top + window.scrollY - 70); });
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: `${SHOTS}/confirm-solo-saisons.png` });
+  const camp = await page.$('.rules.camp');
+  if (camp) return 'section campagne présente';
+  return '4 captures confirm-*.png';
 });
 
 await page.click('[data-tab="tour"]');

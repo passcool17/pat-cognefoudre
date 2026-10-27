@@ -168,18 +168,23 @@ export const EPILOGUE = [
   '« Mais nous serons là pour déblayer la neige. Pour qu’ils se souviennent : ce royaume est le nôtre, pour bien des hivers encore. » — Lepus Longear',
 ];
 
-// Choix d'interprétation à afficher (onglet Règles). La campagne ne tranche pas ces points.
-export const INTERPRETATIONS = [
-  'Les quêtes « bleues » de la campagne sont les Quêtes en montagne (publiques), les « vertes » les Quêtes en plaine.',
-  'Année 1 : au printemps, tu gagnes ton garde forestier + 1 ouvrier normal (les 2 ouvriers de la saison).',
-  'Années 2 et 4 : tu commences avec 1 garde forestier, 1 ouvrier normal et l’apprenti (3 figurines).',
-  'Année 2 : un réfugié qui rejoint les bandits devient tout de suite un ouvrier normal de Pat, utilisable dès cette saison. En fin de partie, il ne compte que pour le −5.',
-  'Année 3 : « un de ses propres objectifs » = la quête du haut de la pile Quête de Pat.',
-  'Année 3 : la neige d’une carte face cachée prise par Pat va dans sa réserve, comme d’habitude.',
-  'Année 3 : la campagne ne dit rien des jetons Pat. L’app garde l’ordre habituel sur les cartes face visible et, s’il n’y en a aucune, applique l’ordre des cartes face cachée.',
-  'Année 4 : les bandits ne touchent que toi. Pat n’en reçoit pas et n’en chasse pas.',
-  'Pas de score cumulé : seule compte la victoire de chaque année.',
-  'Les noms des Grosses Créatures sont ceux de la campagne (anglais) ; la VF des cartes n’a pas été vérifiée.',
+// Précisions de la campagne, vérifiées dans le texte d'Otto Gregor (The Year of the Rabbit) et le livret Silverfrost.
+export const PRECISIONS = [
+  'Les quêtes « bleues » de la campagne sont les Quêtes en montagne (publiques, 3 à 2 joueurs), les « vertes » les Quêtes en plaine (on en pioche 2, on en garde 1) : campagne, Année 1 ; livret p.6.',
+  'Année 1 : ton garde forestier est l’un de tes 2 nouveaux ouvriers du printemps (campagne, Année 1 ; livret p.6 : 2 ouvriers au printemps).',
+  'Années 2 et 4 : tu commences avec 1 garde forestier, 1 ouvrier normal et l’apprenti, soit 3 figurines (campagne, Années 2 et 4).',
+  'Année 2 : un réfugié qui rejoint les bandits va dans la réserve d’ouvriers de Pat : il le pose comme ouvrier normal, son garde forestier toujours en dernier. En fin de partie, il ne compte que pour le −5 (campagne, Année 2 ; livret p.19).',
+  'Année 3 : « un de ses propres objectifs » = la quête du haut de la pile Quête de Pat (campagne, Année 3 ; livret p.17 et p.19).',
+  'Année 3 : la neige d’une carte face cachée prise par Pat va dans sa réserve (campagne, Année 3 : « add it to his pool »).',
+  'Année 4 : les bandits arrivent avec la neige de <b>ta</b> ville ; Pat n’a jamais de neige dans sa ville, donc il ne reçoit pas de bandits (campagne, Année 4 ; livret p.21).',
+  'Pas de score cumulé : il faut battre Pat chaque année pour passer à la suivante, sinon on la rejoue (campagne, « How to win and progress »).',
+  'Les noms des Grosses Créatures sont ceux de la campagne (en anglais).',
+];
+
+// Cas que ni la campagne ni le livret ne tranchent : l'app applique ce choix en attendant la décision de PassCool_17.
+export const CAS_NON_PREVUS = [
+  'Année 3 : jeton Pat dans la brume. L’app garde l’ordre habituel sur les cartes face visible et, s’il n’y en a aucune, applique l’ordre des cartes face cachée (le livret p.20 utilise le même ordre que pour jouer une carte de la Vallée).',
+  'Année 4 : un bandit en trop posé sur le plateau, sur un lieu où Pat envoie un ouvrier. L’app ne donne pas de consigne particulière.',
 ];
 
 // ---------- état de campagne (carnet) ----------

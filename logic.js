@@ -69,7 +69,7 @@ function withMist(s, pending) {
   return pending;
 }
 
-export function newGame({ level = 2, loopTactiques = false, startWorkers = 2, seed, mist = false } = {}) {
+export function newGame({ level = 2, loopTactiques = false, startWorkers = 1, seed, mist = false } = {}) {
   const s = {
     v: 1,
     level,

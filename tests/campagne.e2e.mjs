@@ -200,6 +200,19 @@ for (const vp of viewports) {
     await page.click('button[data-tab="regles"]');
     await page.evaluate(() => document.querySelector('.rules.camp').scrollIntoView());
     await shot('14-regles-campagne');
+    {
+      const t = await page.textContent('#app');
+      assert(!/à confirmer/i.test(t), 'il reste « à confirmer »');
+      assert(await page.$$eval('ul.camp-precisions li', (l) => l.length) >= 8, 'précisions campagne');
+      assert(await page.$$eval('ul.camp-non-prevus li', (l) => l.length) === 2, 'cas non prévus campagne');
+      if (vp.name === 'telephone') {
+        for (const [sel, file] of [['.camp-precisions', 'confirm-campagne-precisions.png'], ['.camp-non-prevus', 'confirm-campagne-non-prevus.png']]) {
+          await page.evaluate((q) => { const el = document.querySelector(q).previousElementSibling; window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 70); }, sel);
+          await page.waitForTimeout(150);
+          await page.screenshot({ path: `${SHOTS}/${file}` });
+        }
+      }
+    }
     await scoreAndFinish(3);
     await shot('15-fin-campagne', true);
     c = await carnet();

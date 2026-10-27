@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { newGame, startTurn, answer, workersLeft, patTokensFree, score, winner, tactiquesIndexOf, COMPLOT_BY_ID } from '../logic.js';
-import { COMPLOTS, PLANS, TACTIQUES, QUEST_PILE } from '../data.js';
+import { COMPLOTS, PLANS, TACTIQUES, QUEST_PILE, WORKER_GAIN } from '../data.js';
 import { makeRng, playGame } from './sim.js';
 
 test('données : 8 Plans, 20 Complots, 9 lignes Tactiques', () => {
@@ -75,7 +75,7 @@ test('Voyage hors printemps sauté automatiquement', () => {
 
 test('Préparation : ouvriers, jetons Forge/Guilde, nouvelle carte Plan', () => {
   const s = newGame({ level: 2, seed: 7 });
-  s.workers.normalPlaced = 2; s.workers.rangerPlaced = true;
+  s.workers.normalPlaced = 1; s.workers.rangerPlaced = true;
   startTurn(s);
   assert.equal(s.pending.kind, 'askHuman');
   assert.equal(s.pending.season, 'automne');
@@ -83,7 +83,7 @@ test('Préparation : ouvriers, jetons Forge/Guilde, nouvelle carte Plan', () => 
   assert.equal(s.pending.kind, 'prepare');
   answer(s, 'ok', { cardsTaken: 2, snowTaken: 1 });
   assert.equal(s.season, 'automne');
-  assert.equal(s.workers.normal, 3);
+  assert.equal(s.workers.normal, 2);
   assert.equal(s.faceDown, 2);
   assert.equal(s.forgeToken, true);
   assert.equal(patTokensFree(s), 9);
@@ -93,7 +93,7 @@ test('Préparation : ouvriers, jetons Forge/Guilde, nouvelle carte Plan', () => 
 test('Humain pas encore préparé : la case ouvrier devient une carte + 1 neige', () => {
   for (let seed = 1; seed < 300; seed++) {
     const s = newGame({ level: 2, seed });
-    s.workers.normalPlaced = 2; s.workers.rangerPlaced = true;
+    s.workers.normalPlaced = 1; s.workers.rangerPlaced = true;
     startTurn(s);
     answer(s, 'no');
     if (s.cur.type !== 'O') continue;
@@ -156,10 +156,18 @@ for (const level of [1, 2, 3, 4]) {
         assert.equal(s.season, 'printemps');
         assert.ok(s.city >= 15);
         assert.equal(workersLeft(s), 0);
-        assert.equal(s.workers.normal, 2 + 1 + 1 + 2);
+        assert.equal(s.workers.normal, 1 + 1 + 1 + 2); // été : 1 + garde forestier (p.6)
         const sc = score(s, { cardPoints: 30 });
         assert.ok(Number.isFinite(sc.total));
       }
     });
   }
 }
+
+test('été : Pat a 1 ouvrier normal + le garde forestier (livret p.6), puis +1, +1, +2', () => {
+  const s = newGame({ level: 2, seed: 1 });
+  assert.equal(s.opts.startWorkers, 1);
+  assert.equal(s.workers.normal, 1);
+  assert.equal(s.workers.rangerPlaced, false);
+  assert.deepEqual(WORKER_GAIN, { automne: 1, hiver: 1, printemps: 2 });
+});
