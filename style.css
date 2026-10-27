@@ -252,10 +252,10 @@ hr { border: 0; border-top: 1px dashed rgba(59, 31, 77, .3); width: 100%; }
   mask-image: radial-gradient(ellipse 58% 56% at 50% 47%, #000 62%, rgba(0, 0, 0, .6) 80%, transparent 100%);
   transition: transform .25s ease;
 }
-.pat-av-frame video, .pat-av-frame canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.pat-av-frame video { object-fit: cover; opacity: 0; transition: opacity .4s ease; background: transparent; }
+.pat-av-frame video, .pat-av-frame .pat-poster { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
+.pat-av-frame video { opacity: 0; transition: opacity .2s linear; background: transparent; }
 .pat-av-frame video.on { opacity: 1; }
-.pat-av-frame canvas { pointer-events: none; }
+.pat-av-frame video.top { z-index: 1; }
 .pet:active .pat-av-frame { transform: scale(.98); }
 .pet-flakes { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: 50%; }
 .pet-flakes i {
@@ -301,6 +301,7 @@ hr { border: 0; border-top: 1px dashed rgba(59, 31, 77, .3); width: 100%; }
 .icon-btn { display: inline-grid; place-items: center; flex: none; cursor: pointer; }
 .icon-btn[hidden] { display: none; }
 .fs-btn { opacity: .85; }
+.music-btn.off { opacity: .5; filter: grayscale(1); }
 .fs-btn:hover, .fs-btn:focus-visible { opacity: 1; }
 html:fullscreen, html:-webkit-full-screen { background: var(--night); }
 .fs-hint {
@@ -312,3 +313,13 @@ html:fullscreen, html:-webkit-full-screen { background: var(--night); }
 }
 .fs-hint button { background: rgba(247, 240, 225, .12); border: 1px solid rgba(247, 240, 225, .3); color: var(--cream); border-radius: 10px; min-width: 36px; min-height: 36px; font: 600 .9rem system-ui, sans-serif; cursor: pointer; }
 .fs-hint .fs-go { padding: 0 12px; background: var(--red); border-color: var(--red-dark); }
+
+/* Téléphone étroit : trois boutons dans l'en-tête (plein écran, musique, réglages) sans couper le titre. */
+@media (max-width: 420px) {
+  .top { gap: 8px; }
+  .avatar { width: 44px; height: 44px; }
+  h1 { font-size: 1.12rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .icon-btn { width: 40px; height: 40px; font-size: 1.15rem; }
+}
+.music-btn { position: relative; }
+.music-btn.off::after { content: ""; position: absolute; left: 9px; right: 9px; top: 50%; height: 2px; background: var(--cream); transform: rotate(-40deg); border-radius: 2px; }

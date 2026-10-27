@@ -5,13 +5,14 @@
   "type": "module",
   "description": "Pat Cognefoudre — automate solo virtuel pour Everdell : Silverfrost (PWA)",
   "scripts": {
-    "test": "node --test tests/logic.test.js tests/pet.test.js tests/campagne.test.js",
+    "test": "node --test tests/logic.test.js tests/pet.test.js tests/campagne.test.js tests/voix.test.js tests/musique.test.js",
     "test:e2e": "node tests/e2e.mjs",
     "serve": "python3 -m http.server 8765",
     "test:pet-e2e": "node tests/pet.e2e.mjs",
     "test:campagne-e2e": "node tests/campagne.e2e.mjs",
     "test:realiste-e2e": "node tests/realiste.e2e.mjs",
-    "test:plein-ecran-e2e": "node tests/plein-ecran.e2e.mjs"
+    "test:plein-ecran-e2e": "node tests/plein-ecran.e2e.mjs",
+    "test:musique-e2e": "node tests/musique.e2e.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.64.1"

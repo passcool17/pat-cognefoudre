@@ -25,6 +25,7 @@
       <div class="sub" id="subtitle">Roi des Bandits · Everdell : Silverfrost</div>
     </div>
     <button class="icon-btn fs-btn" id="btn-fullscreen" type="button" aria-label="Plein écran" title="Plein écran" hidden>⛶</button>
+    <button class="icon-btn music-btn" id="btn-music" type="button" aria-label="Musique" aria-pressed="true" title="Musique">🎵</button>
     <button class="icon-btn" id="btn-settings" aria-label="Réglages">⚙️</button>
   </header>
 
@@ -48,6 +49,11 @@
       <label class="volume"><span>🔈</span><input type="range" id="opt-volume" min="0" max="1" step="0.1" aria-label="Volume de la voix de Pat"><span>🔊</span></label>
       <button type="button" class="btn ghost block" id="btn-voice-test">Tester la voix</button>
       <p class="hint" id="voice-status"></p>
+      <hr>
+      <h3 class="sheet-h">🎵 Musique</h3>
+      <label class="switch"><input type="checkbox" id="opt-music"> <span>Musique de fond pendant la partie</span></label>
+      <label class="volume"><span>🔈</span><input type="range" id="opt-music-volume" min="0" max="1" step="0.05" aria-label="Volume de la musique"><span>🔊</span></label>
+      <p class="hint">Musique : <em>Snowbound Pass</em>, par passcool17. Elle baisse quand Pat parle.</p>
       <hr>
       <button type="button" class="btn danger" id="btn-new">Nouvelle partie…</button>
       <p class="hint">Ta partie est enregistrée automatiquement sur cet appareil.</p>

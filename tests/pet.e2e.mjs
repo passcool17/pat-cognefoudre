@@ -34,13 +34,16 @@ const speechStub = () => {
 // Lecture audio simulée (horloge simulée) : enregistre chaque lecture et finit après 30 ms.
 const audioStub = () => {
   window.__plays = [];
+  const realPlay = HTMLMediaElement.prototype.play;
+  const realPause = HTMLMediaElement.prototype.pause;
   HTMLMediaElement.prototype.play = function play() {
+    if (this instanceof HTMLVideoElement) return realPlay.call(this); // boucles vidéo de Pat : lecture normale
     const src = this.src.split('/').pop();
     window.__plays.push({ src, volume: this.volume, muted: this.muted, gain: window.__patAudio?.gain() });
     if (src !== 'silence.mp3') setTimeout(() => this.dispatchEvent(new Event('ended')), 30);
     return Promise.resolve();
   };
-  HTMLMediaElement.prototype.pause = function pause() {};
+  HTMLMediaElement.prototype.pause = function pause() { if (this instanceof HTMLVideoElement) realPause.call(this); };
 };
 
 function assert(c, msg) { if (!c) throw new Error(msg); }

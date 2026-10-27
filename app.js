@@ -14,9 +14,10 @@ import {
   voiceSettings, saveVoice, speak, stopSpeaking, unlockOnFirstGesture, currentVoice, speechSupported, recordedCount,
 } from './voice.js';
 import { initFullscreen } from './fullscreen.js';
+import { initMusic, musicSettings, setMusicOn, setMusicVolume } from './music.js';
 import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
 
-export const VERSION = '1.5.0';
+export const VERSION = '1.6.2';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -468,9 +469,10 @@ function petSay() {
   clearTimeout(petCtl.talkTimer);
   const minMs = Math.max(1800, line.text.length * 55);
   const t0 = Date.now();
-  const spoke = speak(line.text, () => {
+  // Voix audible : Pat repasse au repos dès la fin de la voix. Muet : il « parle » le temps de lire la bulle.
+  const spoke = speak(line.text, (ok) => {
     clearTimeout(petCtl.talkTimer);
-    petCtl.talkTimer = setTimeout(stopTalking, Math.max(0, minMs - (Date.now() - t0)));
+    if (ok) stopTalking(); else petCtl.talkTimer = setTimeout(stopTalking, Math.max(0, minMs - (Date.now() - t0)));
   }, line.audio);
   window.__petSpoken = (window.__petSpoken || 0) + (spoke ? 1 : 0);
   if (!spoke) { clearTimeout(petCtl.talkTimer); petCtl.talkTimer = setTimeout(stopTalking, minMs); }
@@ -724,6 +726,21 @@ $('#tabs').addEventListener('click', (e) => {
   tab = b.dataset.tab; render(); window.scrollTo(0, 0);
 });
 initFullscreen($('#btn-fullscreen'));
+// Musique de fond : bouton 🎵 de l'en-tête (marche/arrêt) et volume dans ⚙️, indépendants de la voix.
+function syncMusicUI() {
+  const b = $('#btn-music');
+  b.setAttribute('aria-pressed', String(musicSettings.on));
+  b.classList.toggle('off', !musicSettings.on);
+  b.title = musicSettings.on ? 'Musique : activée' : 'Musique : coupée';
+  $('#opt-music').checked = musicSettings.on;
+  $('#opt-music-volume').value = String(musicSettings.volume);
+  $('#opt-music-volume').disabled = !musicSettings.on;
+}
+initMusic();
+syncMusicUI();
+$('#btn-music').addEventListener('click', () => { setMusicOn(!musicSettings.on); syncMusicUI(); });
+$('#opt-music').addEventListener('change', (e) => { setMusicOn(e.target.checked); syncMusicUI(); });
+$('#opt-music-volume').addEventListener('input', (e) => setMusicVolume(e.target.value));
 $('#btn-settings').addEventListener('click', () => { $('#app-version').textContent = `Version ${VERSION}`; syncVoiceUI(); $('#settings').showModal(); });
 $('#opt-voice').addEventListener('change', (e) => setVoiceOn(e.target.checked));
 $('#opt-volume').addEventListener('input', (e) => { voiceSettings.volume = Number(e.target.value); saveVoice(); });

@@ -23,6 +23,13 @@ function assert(c, msg) { if (!c) throw new Error(msg); }
 
 for (const vp of viewports) {
   const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, locale: 'fr-CA' });
+  // Tirage déterministe : Math.random graine fixe à chaque chargement (graine des parties comprise) et
+  // bavardages de Pat coupés (leurs minuteries consommeraient des tirages selon le temps écoulé).
+  await ctx.addInitScript(() => {
+    let a = 20261027;
+    Math.random = () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    import('./pet.js').then(({ TIMING }) => { for (const k of ['chatterMin', 'chatterMax', 'slowAfter', 'nagEvery']) TIMING[k] = 1e9; }).catch(() => {});
+  });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
