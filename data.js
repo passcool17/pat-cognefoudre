@@ -70,8 +70,8 @@ export const WORKER_GAIN = { automne: 1, hiver: 1, printemps: 2 };
 // Cartes Tempête de neige retournées à 2 joueurs (livret p.14)
 export const STORM_CARDS = { automne: 2, hiver: 3, printemps: 1 };
 
-// Pile Quête de Pat (carte Aide, décision PassCool_17 pour le niveau 4)
-export const QUEST_PILE = { 1: { plaine: 5, montagne: 0 }, 2: { plaine: 4, montagne: 1 }, 3: { plaine: 4, montagne: 1 }, 4: { plaine: 3, montagne: 1 } };
+// Pile Quête de Pat : 5 quêtes, livret Silverfrost p.17 (niveau 4 : 3 en plaine + 2 en montagne)
+export const QUEST_PILE = { 1: { plaine: 5, montagne: 0 }, 2: { plaine: 4, montagne: 1 }, 3: { plaine: 4, montagne: 1 }, 4: { plaine: 3, montagne: 2 } };
 // Bonus de fin de partie par niveau (§9)
 export const LEVEL_BONUS = { 1: { violet: 2, feu: 0, cachee: 0 }, 2: { violet: 3, feu: 1, cachee: 1 }, 3: { violet: 5, feu: 1, cachee: 1 }, 4: { violet: 6, feu: 1, cachee: 1 } };
 

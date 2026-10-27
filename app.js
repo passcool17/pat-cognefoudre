@@ -207,7 +207,6 @@ function renderChecklist() {
       <tr class="total"><td>Mélange-les face cachée</td><td class="n">${q.plaine + q.montagne}</td></tr>
     </table>
     <div class="qpile" aria-hidden="true">${pile}</div>
-    ${S.level === 4 ? '<p class="hint">Niveau 4 : 3 + 1 comme sur la carte Aide (le livret indique 2 remplacements).</p>' : ''}
     <button class="btn huge red" id="btn-ready">C’est prêt : au tour de Pat !</button>
   </section>`;
 }
@@ -663,7 +662,7 @@ function renderRegles() {
   <h3>Choix de l’app <span class="flag">à confirmer</span></h3><ul>
         <li>Jeton Pat sur une pile de doubles : en se préparant, Pat ne prend que la carte du dessus.</li>
     <li>Don au joueur à ta gauche (Pat) : le feu reste chez lui, une carte va face cachée, toute autre ressource retourne à la réserve.</li>
-    <li>Niveau 4 : pile de 3 ${scrollIcon('plaine')} + 1 ${scrollIcon('montagne')}, comme sur la carte Aide.</li>
+    <li>Niveau 4 : pile de 3 ${scrollIcon('plaine')} + 2 ${scrollIcon('montagne')} (5 quêtes, livret Silverfrost p.17).</li>
     <li>Tactiques : pas de rebouclage par défaut (option dans les réglages). Au bout de la liste, Pat joue la carte du coin (+1 neige).</li>
     <li>« Balise ? » de la carte Tactiques : on prend la valeur de balise du Complot en cours.</li>
     <li>Guilde sans quête possible (pile vide, aucune ${scrollIcon('montagne')}) : l’ouvrier se déplace avec la carte Tactiques.</li>

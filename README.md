@@ -83,7 +83,7 @@ D’après **The Year of the Rabbit** d’Otto Gregor (campagne non officielle, 
 
 ## Interprétations (à confirmer)
 - On lit le quart du Complot qui recouvre le coin du Plan en cours.
-- Niveau 4 : pile de 3 quêtes en plaine + 1 en montagne.
+- Niveau 4 : pile de 3 quêtes en plaine + 2 en montagne (5 quêtes, livret Silverfrost p.17).
 - Carte Tactiques : pas de rebouclage par défaut (option dans ⚙️). Au bout de la liste, Pat joue la carte du coin (+1 neige).
 - « Balise ? » de la carte Tactiques : valeur de balise du Complot en cours.
 - Guilde sans quête possible : l’ouvrier se déplace avec la carte Tactiques.
