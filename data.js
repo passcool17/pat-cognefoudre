@@ -23,7 +23,8 @@ const Q = (s) => {
 };
 const C = (id, hg, hd, bg, bd, colors) => ({
   id,
-  // indexé par coin du Plan (HG, HD, BD, BG)
+  // quarts visuels de la carte, indexés HG, HD, BD, BG (sens horaire).
+  // Posé sur un coin du Plan, le Complot le recouvre avec le quart OPPOSÉ : voir quarterIndexFor (logic.js).
   quarters: [Q(hg), Q(hd), Q(bd), Q(bg)],
   colors: colors.split(','),
 });

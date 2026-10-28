@@ -41,6 +41,17 @@ export function tactiquesIndexOf(loc) {
   if (k === 'voyage') return TACTIQUES.indexOf('voyage');
   return TACTIQUES.indexOf(loc);
 }
+// Coins et quarts indexés HG=0, HD=1, BD=2, BG=3 (sens horaire).
+// Un Complot posé sur un coin du Plan le recouvre avec son coin OPPOSÉ :
+// coin haut-gauche → on lit le quart bas-droit du Complot, etc. (livret solo p.18).
+export const CORNER_NAMES = ['haut-gauche', 'haut-droite', 'bas-droite', 'bas-gauche'];
+export function quarterIndexFor(corner) {
+  return (corner + 2) % 4;
+}
+export function quarterFor(complot, corner) {
+  return complot.quarters[quarterIndexFor(corner)];
+}
+
 function complotBaliseValue(complot) {
   for (const q of complot.quarters) {
     const b = baliseOf(q.loc);
@@ -182,9 +193,10 @@ function proceedPlan(s) {
     s.plan.count += 1;
     s.plan.next = (corner + 1) % 4;
     const complot = COMPLOT_BY_ID[cid];
-    const quarter = complot.quarters[corner];
-    s.cur = { complot: cid, corner, type: plan.corners[corner], quarter, arrow: plan.arrow, usedTactiques: false, tokenDone: false, tIdx: null };
-    log(s, `Complot ${cid} placé sur le coin ${['haut-gauche', 'haut-droite', 'bas-droite', 'bas-gauche'][corner]} (${plan.corners[corner] === 'O' ? 'ouvrier' : 'carte'}).`);
+    const qIdx = quarterIndexFor(corner);
+    const quarter = complot.quarters[qIdx];
+    s.cur = { complot: cid, corner, qIdx, type: plan.corners[corner], quarter, arrow: plan.arrow, usedTactiques: false, tokenDone: false, tIdx: null };
+    log(s, `Complot ${cid} placé sur le coin ${CORNER_NAMES[corner]} (${plan.corners[corner] === 'O' ? 'ouvrier' : 'carte'}) : on lit son quart ${CORNER_NAMES[qIdx]}.`);
     if (plan.corners[corner] === 'O') {
       if (workersLeft(s) > 0) return beginPlace(s, quarter.loc, null);
       return beginCard(s, quarter.src, { replaced: true, why: 'noWorkers' });

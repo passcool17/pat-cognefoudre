@@ -8,6 +8,7 @@ import { humanFinal, gameOptions, banditPlaceNote } from './campagne.js';
 import {
   newGame, startTurn, answer, adjust, setHumanPrepared, score, winner, workersLeft, patTokensFree,
   nextSeason, locKind, baliseOf, PLAN_BY_ID, COMPLOT_BY_ID, giveToPat, cityColors, winterFuryNote,
+  quarterIndexFor, CORNER_NAMES,
 } from './logic.js';
 import { MOODS, TIMING, TEST_LINE, computeMood, happiness, newPet, pickLine } from './pet.js';
 import {
@@ -18,7 +19,7 @@ import { initMusic, musicSettings, setMusicOn, setMusicVolume } from './music.js
 import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
 import { introSettings, saveIntro, introWanted, showIntro, introOpen } from './intro.js';
 
-export const VERSION = '1.7.1';
+export const VERSION = '1.7.2';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -221,8 +222,12 @@ function planView() {
   if (S.cur) {
     const c = COMPLOT_BY_ID[S.cur.complot];
     const order = [0, 1, 3, 2]; // affichage HG HD / BG BD
+    // Le Complot recouvre le coin du Plan avec son coin opposé : c’est ce quart qu’on lit (p.18).
+    const qIdx = S.cur.qIdx ?? quarterIndexFor(S.cur.corner);
+    const toward = ['↖', '↗', '↘', '↙'][qIdx]; // le quart lu pointe vers le coin recouvert
     cplt = `<div class="complot"><div class="kicker">Complot ${c.id}</div>
-      <div class="q">${order.map((i) => `<div class="${i === S.cur.corner ? 'on' : ''}">${quarterLabel(c.quarters[i])}</div>`).join('')}</div>
+      <p class="hint cover-note">Posé sur le coin <b>${CORNER_NAMES[S.cur.corner]}</b> du Plan, il le recouvre avec son coin <b>${CORNER_NAMES[qIdx]}</b> : on lit ce quart.</p>
+      <div class="q">${order.map((i) => `<div class="${i === qIdx ? 'on' : ''}" data-q="${i}">${i === qIdx ? `<span class="toward" aria-hidden="true">${toward}</span>` : ''}${quarterLabel(c.quarters[i])}</div>`).join('')}</div>
       ${chipsFor(c.colors)}</div>`;
   } else {
     cplt = `<div><p class="hint">Prochain coin : ${nextC === null ? 'nouvelle carte Plan' : p.corners[nextC] === 'O' ? '🐾 ouvrier' : '🃏 carte'}.</p></div>`;
@@ -639,7 +644,7 @@ function renderRegles() {
   <h3>À chaque tour</h3><ul>
     <li>Une seule action : placer un ouvrier, jouer une carte, ou se préparer pour la saison.</li>
     <li>L’app révèle un Complot et le pose sur le prochain coin du Plan : la caverne d’abord, puis dans le sens horaire. 🐾 = ouvrier, 🃏 = carte.</li>
-    <li>On lit le quart du Complot qui recouvre ce coin (schéma p.18).</li>
+    <li>Le Complot recouvre ce coin du Plan avec son <b>coin opposé</b>, et c’est ce quart-là qu’on lit (schéma p.18). Exemple : caverne en haut à gauche → on lit le quart bas-droit du Complot ; coin suivant (haut à droite) → quart bas-gauche ; puis bas à droite → quart haut-gauche ; bas à gauche → quart haut-droit.</li>
     <li>Pile Quête de Pat : 5 quêtes face cachée. Niveau 1 : 5 ${scrollIcon('plaine')} ; niveaux 2 et 3 : 4 ${scrollIcon('plaine')} + 1 ${scrollIcon('montagne')} ; niveau 4 : 3 ${scrollIcon('plaine')} + 2 ${scrollIcon('montagne')} (p.17).</li></ul>
   <h3>Ouvriers</h3><ul>
     <li>En été, Pat a 2 ouvriers comme toi : 1 ouvrier normal + le garde forestier (mise en place p.6).</li>
