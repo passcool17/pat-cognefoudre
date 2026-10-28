@@ -83,7 +83,7 @@ D’après **The Year of the Rabbit** d’Otto Gregor (campagne non officielle, 
   - Année 3 : jeton Pat dans la brume, ordre habituel sur les cartes face visible, sinon ordre des cartes face cachée.
 
 ## Précisions du livret (mode solo)
-- On lit le quart du Complot qui recouvre le coin du Plan en cours (schéma p.18).
+- Le Complot recouvre le coin du Plan avec son **coin opposé**, et c’est ce quart-là qu’on lit (schéma p.18) : caverne en haut à gauche → quart bas-droit du Complot, haut à droite → bas-gauche, bas à droite → haut-gauche, bas à gauche → haut-droit (corrigé en v1.7.2).
 - En été, Pat a 2 ouvriers : 1 ouvrier normal + le garde forestier (mise en place p.6), puis +1 en automne, +1 en hiver, +2 au printemps.
 - Pile Quête de Pat (p.17) : niveau 1 = 5 en plaine ; niveaux 2 et 3 = 4 + 1 en montagne ; niveau 4 = 3 + 2.
 - « Balise ? » de la carte Tactiques : valeur de balise ailleurs sur le Complot en cours (p.19).

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { newGame, startTurn, answer, workersLeft, patTokensFree, score, winner, tactiquesIndexOf, COMPLOT_BY_ID, giveToPat, winterFuryNote } from '../logic.js';
+import { newGame, startTurn, answer, workersLeft, patTokensFree, score, winner, tactiquesIndexOf, COMPLOT_BY_ID, giveToPat, winterFuryNote, quarterIndexFor, quarterFor } from '../logic.js';
 import { COMPLOTS, PLANS, TACTIQUES, QUEST_PILE, WORKER_GAIN } from '../data.js';
 import { makeRng, playGame } from './sim.js';
 
@@ -33,6 +33,26 @@ test('premier tour : Complot posé sur le coin de la grotte', () => {
   assert.ok(s.plan.filled[plan.cave]);
   assert.equal(s.cur.corner, plan.cave);
   assert.equal(s.pending.kind, plan.corners[plan.cave] === 'O' ? 'place' : 'card');
+});
+
+test('Complot : on lit le quart OPPOSÉ au coin recouvert (livret solo p.18)', () => {
+  // coins et quarts : 0 HG, 1 HD, 2 BD, 3 BG
+  assert.equal(quarterIndexFor(0), 2); // caverne haut-gauche → quart bas-droit
+  assert.equal(quarterIndexFor(1), 3); // haut-droite → bas-gauche
+  assert.equal(quarterIndexFor(2), 0); // bas-droite → haut-gauche
+  assert.equal(quarterIndexFor(3), 1); // bas-gauche → haut-droite
+  // exemple du livret : C2 posé sur la caverne en haut à gauche → Forge (+1 feu) ou PILE
+  assert.deepEqual(quarterFor(COMPLOT_BY_ID.C2, 0), { loc: 'forge', src: 'pile' });
+});
+
+test('Complot : le tour de Pat utilise le quart opposé au coin du Plan', () => {
+  for (let seed = 1; seed <= 30; seed++) {
+    const s = newGame({ level: 2, seed });
+    startTurn(s);
+    const c = COMPLOT_BY_ID[s.cur.complot];
+    assert.equal(s.cur.qIdx, (s.cur.corner + 2) % 4, `graine ${seed}`);
+    assert.deepEqual(s.cur.quarter, c.quarters[(s.cur.corner + 2) % 4], `graine ${seed}`);
+  }
 });
 
 test('lieu bloqué → Tactiques dans le sens de la flèche + jeton Pat', () => {
