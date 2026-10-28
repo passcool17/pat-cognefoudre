@@ -279,15 +279,6 @@ hr { border: 0; border-top: 1px dashed rgba(59, 31, 77, .3); width: 100%; }
   border: 10px solid transparent; border-top: 0; border-bottom-color: #fff;
 }
 .bubble.pop { animation: pet-pop .35s ease-out; }
-.mood { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; font: 700 .95rem system-ui; margin: 4px 0 8px; }
-.mood-emoji { font-size: 1.6rem; }
-.moodbar { width: 140px; height: 10px; border-radius: 6px; background: var(--cream-2); overflow: hidden; display: inline-block; }
-.moodbar > span { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--red), #e0a33a, var(--green-q)); transition: width .6s; }
-.mood[data-mood="grognon"] .mood-label { color: var(--red); }
-.mood[data-mood="impatient"] .mood-label { color: #b0651a; }
-.mood[data-mood="endormi"] .mood-label { color: #3a76b8; }
-.mood[data-mood="triomphant"] .mood-label { color: var(--violet); }
-.pet-actions { justify-content: center; gap: 10px; }
 .pet-final { margin-top: 14px; text-align: center; }
 .pet-final .pet { width: min(60vw, 240px); }
 .sheet-h { margin: 4px 0 8px; font-size: 1.05rem; }
@@ -306,7 +297,6 @@ hr { border: 0; border-top: 1px dashed rgba(59, 31, 77, .3); width: 100%; }
 .icon-btn { display: inline-grid; place-items: center; flex: none; cursor: pointer; }
 .icon-btn[hidden] { display: none; }
 .fs-btn { opacity: .85; }
-.music-btn.off { opacity: .5; filter: grayscale(1); }
 .fs-btn:hover, .fs-btn:focus-visible { opacity: 1; }
 html:fullscreen, html:-webkit-full-screen { background: var(--night); }
 .fs-hint {
@@ -326,8 +316,6 @@ html:fullscreen, html:-webkit-full-screen { background: var(--night); }
   h1 { font-size: 1.12rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .icon-btn { width: 40px; height: 40px; font-size: 1.15rem; }
 }
-.music-btn { position: relative; }
-.music-btn.off::after { content: ""; position: absolute; left: 9px; right: 9px; top: 50%; height: 2px; background: var(--cream); transform: rotate(-40deg); border-radius: 2px; }
 
 /* ---------- Intro de Pat (au lancement) ---------- */
 .intro {

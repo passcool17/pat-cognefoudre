@@ -54,7 +54,9 @@ await step('silence avant le premier toucher', async () => {
   await page.waitForTimeout(800);
   const m = await M();
   assert(!m.playing && m.gain === 0 && m.mode === null, JSON.stringify(m));
-  assert((await page.getAttribute('#btn-music', 'aria-label')) === 'Musique' && (await page.getAttribute('#btn-music', 'aria-pressed')) === 'true', 'bouton 🎵');
+  assert(!(await page.$('#btn-music')), 'bouton 🎵 encore dans l’en-tête (v1.8.0 : réglage dans ⚙️)');
+  assert(await page.$('#btn-fullscreen'), 'bouton plein écran absent');
+  assert(await page.$eval('#opt-music', (e) => e.checked), 'musique cochée par défaut dans ⚙️');
 });
 await step('premier toucher → boucle Web Audio à 28 %', async () => {
   await page.click('[data-level="2"]');
@@ -70,7 +72,7 @@ await step('réplique mp3 : musique baissée à 10 % puis remontée, rampes ~300
   await gainSettles(0.28);
   await page.evaluate(() => { window.__segs.length = 0; window.__gains.length = 0; });
   await page.waitForTimeout(120);
-  await page.click('#btn-talk');
+  await page.click('#pet');
   await page.waitForFunction(() => window.__segs.length > 0, null, { timeout: 5000 });
   await gainSettles(0.1, 1500);
   await page.waitForFunction(() => !window.__patMusic.ducked, null, { timeout: 15000 });
@@ -102,10 +104,11 @@ await step('réplique numérotée (3 morceaux) : musique baissée tout du long',
   return `${r.segs.length} morceaux, gain max ${r.max.toFixed(2)} sur ${r.n} mesures`;
 });
 await step('muet de la voix sans effet sur la musique', async () => {
-  await page.click('#btn-mute');
+  const setVoice = async (on) => { await page.click('#btn-settings'); await page.setChecked('#opt-voice', on); await page.click('#settings button:not([type])'); };
+  await setVoice(false);
   await page.waitForTimeout(400);
   const m = await M();
-  await page.click('#btn-mute');
+  await setVoice(true);
   assert(m.playing && near(m.gain, 0.28), JSON.stringify(m));
 });
 await step('onglet caché → musique en pause, reprise au retour', async () => {
@@ -125,29 +128,33 @@ await step('volume dans ⚙️ : 50 %, gardé après rechargement', async () => 
   await page.click('#settings .btn:not(.ghost):not(.danger)');
   await page.reload();
   assert((await page.$eval('#opt-music-volume', (e) => e.value)) === '0.5', 'volume non mémorisé');
-  await page.click('#btn-talk').catch(() => page.click('body'));
+  await page.click('#pet').catch(() => page.click('body'));
   await page.waitForFunction(() => window.__patMusic.playing, null, { timeout: 8000 });
   await page.waitForFunction(() => !window.__patMusic.ducked, null, { timeout: 15000 });
   await gainSettles(0.5);
 });
-await step('bouton 🎵 : coupe, gardé après rechargement, relance', async () => {
+await step('réglage 🎵 dans ⚙️ : coupe, gardé après rechargement, relance', async () => {
   await page.screenshot({ path: `${SHOTS}/musique-entete.png`, clip: { x: 0, y: 0, width: 390, height: 90 } });
   await page.screenshot({ path: `${SHOTS}/musique-telephone.png` });
-  await page.click('#btn-music');
-  assert((await page.getAttribute('#btn-music', 'aria-pressed')) === 'false', 'aria-pressed');
+  await page.click('#btn-settings');
+  await page.uncheck('#opt-music');
+  assert(await page.$eval('#opt-music-volume', (e) => e.disabled), 'volume actif alors que la musique est coupée');
   await gainSettles(0);
   await page.waitForFunction(() => window.__patMusic.state === 'suspended', null, { timeout: 2000 });
-  await page.screenshot({ path: `${SHOTS}/musique-entete-coupee.png`, clip: { x: 0, y: 0, width: 390, height: 90 } });
+  await page.click('#settings .btn:not(.ghost):not(.danger)');
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('pat-cognefoudre:musique')));
   assert(saved.on === false && saved.volume === 0.5, JSON.stringify(saved));
   await page.reload();
   await page.click('#subtitle');
   await page.waitForTimeout(800);
   const m = await M();
-  assert(!m.playing && m.gain === 0 && (await page.getAttribute('#btn-music', 'aria-pressed')) === 'false', `coupée après rechargement ${JSON.stringify(m)}`);
-  await page.click('#btn-music');
+  assert(!m.playing && m.gain === 0, `coupée après rechargement ${JSON.stringify(m)}`);
+  await page.click('#btn-settings');
+  assert(!(await page.isChecked('#opt-music')), 'case musique cochée après rechargement');
+  await page.check('#opt-music');
   await page.waitForFunction(() => window.__patMusic.playing, null, { timeout: 8000 });
   await gainSettles(0.5);
+  await page.click('#settings .btn:not(.ghost):not(.danger)');
 });
 await step('aucune erreur console', async () => { assert(errors.length === 0, errors.join(' | ')); });
 await ctx.close();

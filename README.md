@@ -49,15 +49,15 @@ Ce qui change dans l’app :
 Musique : *Snowbound Pass*, par passcool17 (instrumental fait avec Suno).
 - Elle démarre au premier toucher (règle des navigateurs) et tourne en boucle pendant la partie, à volume modeste (28 %).
 - Quand Pat parle (réplique simple ou numérotée en 3 morceaux), elle baisse à 10 % en 300 ms, puis remonte.
-- Bouton 🎵 en haut (barré quand elle est coupée) et volume dans ⚙️ → 🎵 Musique. Ces réglages sont gardés sur l’appareil et ne dépendent pas du muet de la voix.
+- Marche/arrêt et volume dans ⚙️ → 🎵 Musique (depuis la v1.8.0, plus de bouton 🎵 dans l’en-tête). Ces réglages sont gardés sur l’appareil et ne dépendent pas du muet de la voix.
 - Elle se met en pause quand l’app passe en arrière-plan, puis reprend au retour.
 - Hors ligne : le service worker garde le fichier après sa première lecture (il n’est pas préchargé à l’installation).
 - iPhone : la musique suit le bouton silencieux de l’appareil (en mode silencieux, on ne l’entend pas).
 
 Pendant ton tour, Pat le roi bandit reste à l’écran, sans cadre, fondu dans la neige : un Pat peint (boucles de Créa) par humeur, avec deux boucles de 4,5 s chacune, « repos » quand il se tait et « parle » (gueule animée) quand on l’entend. Fondu d’environ 200 ms entre repos et parle, et entre humeurs.
-- **Il parle** au début de ton tour, parfois pendant (≈ 20-30 s, une fois sur quatre il se tait), puis s’impatiente si tu prends ton temps (50 s, puis toutes les 75 s). Touche Pat ou *Parler* pour une réplique.
-- **Son humeur suit la partie** : 😼 Content de lui, 😾 Grognon (bloqué ce tour-ci ou partie difficile), ⏳ Impatient, 😴 Endormi (hiver), 👑 Triomphant, 🙄 Boudeur (à la fin, selon les scores). 96 répliques, 16 par humeur, sans répétition tant qu’une liste n’est pas épuisée.
-- **Voix enregistrée** : chaque réplique est un petit mp3 (`audio/`) fait avec ElevenLabs (voix « C », préparée par le bot Voix). Elle marche dans tous les navigateurs (Brave sous Linux compris) et hors ligne : le service worker garde les fichiers en cache. Si un fichier manque, la synthèse vocale de l’appareil prend le relais (fr-CA, sinon fr-FR). Réglages dans ⚙️ (activer, volume, tester) ; bouton 🔊/🔇 sous Pat. La bulle s’affiche toujours, avec le texte de la réplique. La lecture se débloque au premier toucher (iPhone, Brave).
+- **Il parle** au début de ton tour, parfois pendant (≈ 20-30 s, une fois sur quatre il se tait), puis s’impatiente si tu prends ton temps (50 s, puis toutes les 75 s). Touche Pat pour une réplique.
+- **Son humeur suit la partie** (elle n’est plus affichée depuis la v1.8.0 : pas de jauge, on la voit à la vidéo de Pat et on l’entend dans ses répliques) : 😼 Content de lui, 😾 Grognon (bloqué ce tour-ci ou partie difficile), ⏳ Impatient, 😴 Endormi (hiver), 👑 Triomphant, 🙄 Boudeur (à la fin, selon les scores). 96 répliques, 16 par humeur, sans répétition tant qu’une liste n’est pas épuisée.
+- **Voix enregistrée** : chaque réplique est un petit mp3 (`audio/`) fait avec ElevenLabs (voix « C », préparée par le bot Voix). Elle marche dans tous les navigateurs (Brave sous Linux compris) et hors ligne : le service worker garde les fichiers en cache. Si un fichier manque, la synthèse vocale de l’appareil prend le relais (fr-CA, sinon fr-FR). Depuis la v1.8.0, toutes les répliques ont leur mp3 (129 fichiers, dont les morceaux des répliques avec un nombre de 2 à 30) : plus de synthèse en pratique. Réglages dans ⚙️ (activer, volume, tester) ; plus de boutons *Parler* et *Voix* sous Pat, ni de phrase d’aide. La bulle s’affiche toujours, avec le texte de la réplique. La lecture se débloque au premier toucher (iPhone, Brave).
 - **Répliques avec un nombre** (cartes 3 à 30, neige 2 à 25, jetons 2 à 10) : trois morceaux enchaînés sur le même lecteur audio, début + nombre + fin (par ex. `seg-content-6-a` + `nombre-12` + `seg-content-6-b`), avec ≈ 80 ms de blanc ; Pat reste en boucle « parle » tout du long. Le morceau suivant est chargé d’avance. En dessous ou au-dessus des valeurs prévues, la réplique n’est pas proposée (jamais « 0 cartes »). Singulier/pluriel gérés dans le texte.
 - **Animation** : deux vidéos superposées ; la boucle suivante apparaît par-dessus l’ancienne, qui reste dessous jusqu’à la fin du fondu (pas de trou). Entre repos et parle de la même humeur, on reprend au même instant de la boucle. Si la vidéo ne peut pas se lire, l’image fixe de l’humeur reste affichée. Mouvement réduit (réglage système) : image fixe.
 - L’humeur est une invention de l’app (elle ne change aucune règle) ; elle est enregistrée avec la partie et suit *Annuler*.
@@ -111,9 +111,10 @@ npm run test:campagne-e2e  # campagne complète (4 années, une défaite) sur t�
 npm run test:pet-e2e  # compagnon : réplique, toucher, minuterie (horloge simulée), muet, réglages voix, lecture audio réelle, secours synthèse
 npm run test:realiste-e2e  # Pat peint : repos/parle pendant l’audio, humeurs, réplique numérotée en 3 morceaux, mouvement réduit, vidéo en panne
 npm run test:plein-ecran-e2e  # plein écran : bouton, bascule, retour proposé, API absente, app installée, astuce iPhone
-npm run test:musique-e2e  # musique : premier toucher, baisse quand Pat parle (chaîne comprise), rampes, 🎵 et volume mémorisés, onglet caché, hors ligne
+npm run test:musique-e2e  # musique : premier toucher, baisse quand Pat parle (chaîne comprise), rampes, marche/arrêt et volume dans ⚙️ mémorisés, onglet caché, hors ligne
 npm run test:intro-e2e  # intro : Entrer (musique, Pat parle, sous-titre), Passer, réglage ⚙️, Revoir, iPhone, vidéo de démo intro-demo.mp4
 npm run test:regles-e2e  # règles Silverfrost : onglet Règles, garde forestier, Vallée, joueur à ta gauche
+npm run test:voix-e2e  # v1.8.0 : vrai mp3 joué au tour du joueur et au toucher, aucune synthèse, jauge/boutons/phrase/🎵 masqués, musique dans ⚙️
 ```
 Voix : les mp3 viennent d’ElevenLabs (voix « C », faite par le bot Voix), déposés dans `/workspace/shared/voix-pat/final/` (`<id>.mp3`, plus les morceaux de `segments.json`). Pour les importer :
 ```

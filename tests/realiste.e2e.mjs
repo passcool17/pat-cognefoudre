@@ -34,6 +34,12 @@ const audioLog = () => {
 };
 
 function assert(c, msg) { if (!c) throw new Error(msg); }
+// Voix de Pat marche/arrêt : réglage ⚙️ (v1.8.0 : plus de bouton « Voix » sous Pat).
+async function setVoice(page, on) {
+  await page.click('#btn-settings');
+  await page.setChecked('#opt-voice', on);
+  await page.click('#settings button:not([type])');
+}
 const browser = await chromium.launch({ executablePath: process.env.CHROME || '/usr/bin/google-chrome', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
 let failed = 0; const results = [];
 
@@ -103,10 +109,10 @@ for (const vp of [{ name: 'telephone', width: 390, height: 844 }, { name: 'table
     await av.evaluate((mod) => mod.setAvatarMood('content'));
     await showing(page, 'content-repos');
 
-    // 3. Vraie réplique mp3 (bouton Parle) : « parle » pendant l'audio, retour à « repos » après
+    // 3. Vraie réplique mp3 (toucher Pat) : « parle » pendant l'audio, retour à « repos » après
     await page.evaluate(() => { window.__segs.length = 0; });
     const t0 = await page.evaluate(() => performance.now());
-    await page.click('#btn-talk');
+    await page.click('#pet');
     const mood = await page.getAttribute('#pet', 'data-mood');
     await page.waitForFunction(() => window.__segs.some((s) => s.ev === 'start'), null, { timeout: 5000 });
     await showing(page, `${mood}-parle`, 3000);
@@ -139,12 +145,12 @@ for (const vp of [{ name: 'telephone', width: 390, height: 844 }, { name: 'table
     await waitIdle(page);
 
     // 5. En muet : parole minutée (synthèse coupée) → « parle » puis « repos »
-    await page.click('#btn-mute');
-    await page.click('#btn-talk');
+    await setVoice(page, false);
+    await page.click('#pet');
     const m2 = await page.getAttribute('#pet', 'data-mood');
     await showing(page, `${m2}-parle`, 3000);
     await waitIdle(page);
-    await page.click('#btn-mute');
+    await setVoice(page, true);
 
     assert(errors.length === 0, `erreurs console : ${errors.join(' | ')}`);
     results.push(`✓ ${vp.name} : repos au calme, humeurs, réplique mp3 (${sw.join(' → ')}), chaîne numérotée 3 segments (blancs ${gaps.join('/')} ms), muet`);
@@ -160,7 +166,7 @@ for (const vp of [{ name: 'telephone', width: 390, height: 844 }, { name: 'table
     const v = await page.$$eval('.pat-v', (vs) => vs.map((v) => ({ paused: v.paused, on: v.classList.contains('on') })));
     assert(v.every((x) => x.paused && !x.on), `mouvement réduit : ${JSON.stringify(v)}`);
     assert(await page.$eval('.pat-poster', (i) => i.complete && i.naturalWidth > 0), 'affiche non chargée');
-    await page.click('#btn-talk');
+    await page.click('#pet');
     assert(await page.evaluate(() => window.__patAvatar.talking), 'mouvement réduit : parole non signalée');
     assert(errors.length === 0, `erreurs console : ${errors.join(' | ')}`);
     await page.screenshot({ path: `${SHOTS}/realiste-mouvement-reduit.png` });
@@ -178,7 +184,7 @@ for (const vp of [{ name: 'telephone', width: 390, height: 844 }, { name: 'table
     assert(p.ok && p.vis === 'visible', `affiche de secours : ${JSON.stringify(p)}`);
     const vis = await page.$$eval('.pat-v', (vs) => vs.map((v) => v.readyState));
     assert(vis.every((r) => r === 0), 'une vidéo a chargé malgré le blocage');
-    await page.click('#btn-talk');
+    await page.click('#pet');
     assert(errors.length === 0, `erreurs console : ${errors.join(' | ')}`);
     await page.screenshot({ path: `${SHOTS}/realiste-sans-video.png` });
     results.push('✓ sans vidéo : affiche de secours');
