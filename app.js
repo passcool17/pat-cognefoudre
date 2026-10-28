@@ -10,7 +10,7 @@ import {
   nextSeason, locKind, baliseOf, PLAN_BY_ID, COMPLOT_BY_ID, giveToPat, cityColors, winterFuryNote,
   quarterIndexFor, CORNER_NAMES,
 } from './logic.js';
-import { MOODS, TIMING, TEST_LINE, computeMood, happiness, newPet, pickLine } from './pet.js';
+import { TIMING, TEST_LINE, computeMood, newPet, pickLine } from './pet.js';
 import {
   voiceSettings, saveVoice, speak, stopSpeaking, unlockOnFirstGesture, currentVoice, speechSupported, recordedCount,
 } from './voice.js';
@@ -19,7 +19,7 @@ import { initMusic, musicSettings, setMusicOn, setMusicVolume } from './music.js
 import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
 import { introSettings, saveIntro, introWanted, showIntro, introOpen } from './intro.js';
 
-export const VERSION = '1.7.2';
+export const VERSION = '1.8.0';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -406,28 +406,20 @@ function petFigure(mood, small = false) {
       <span class="pet-flakes" aria-hidden="true">${flakes}</span>
     </button>`;
 }
+// Humeur : plus de jauge ni de boutons à l'écran (v1.8.0) ; elle choisit toujours la vidéo et les répliques.
+// Voix : ⚙️ ; toucher Pat le fait parler.
 function petPanel(mood) {
   const pet = ensurePet();
-  const m = MOODS[mood];
-  const h = S.ended ? (mood === 'triomphant' ? 100 : 10) : happiness(S);
   return `<div class="pet-stage">
       ${petFigure(mood)}
       <div class="bubble" id="pet-bubble" aria-live="polite">${esc(pet.text || '…')}</div>
-    </div>
-    <div class="mood" id="pet-mood" data-mood="${mood}">
-      <span class="mood-emoji">${m.emoji}</span><span class="mood-label">${m.label}</span>
-      <span class="moodbar" role="meter" aria-label="Humeur de Pat" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${h}"><span style="width:${h}%"></span></span>
-    </div>
-    <div class="row pet-actions">
-      <button type="button" class="btn ghost" id="btn-talk">🗣️ Parler</button>
-      <button type="button" class="btn ghost" id="btn-mute" aria-pressed="${!voiceSettings.on}">${voiceSettings.on ? '🔊 Voix' : '🔇 Muet'}</button>
     </div>`;
 }
 function renderPlayerTurn(nx) {
   return `<section class="card player-turn" data-step="idle" data-player="1">
       <div class="kicker">Tour du joueur · ${SEASON_LABEL[S.season]}</div>
       ${petPanel(currentMood())}
-      <p class="hint center">${S.passed ? 'Pat a passé : continue tes tours jusqu’à ce que tu passes aussi.' : 'Joue ton tour. Touche Pat s’il te manque de compagnie.'}</p>
+      ${S.passed ? '<p class="hint center">Pat a passé : continue tes tours jusqu’à ce que tu passes aussi.</p>' : ''}
       <button class="btn huge red" id="btn-turn">J’ai fini mon tour → Tour de Pat</button>
       ${nx && !S.humanPrepared[nx] ? `<button class="btn ghost block" style="margin-top:10px" id="btn-human-prep">Je viens de me préparer pour ${SEASON_ARTICLE[nx]}</button>` : ''}
       ${S.passed && !S.ended ? '<button class="btn block" style="margin-top:10px" data-a2="endgame">J’ai passé aussi → fin de partie</button>' : ''}
@@ -462,13 +454,6 @@ function petSay() {
   if (!bubble) return;
   bubble.textContent = line.text;
   bubble.classList.remove('pop'); void bubble.offsetWidth; bubble.classList.add('pop');
-  const m = MOODS[mood];
-  const md = $('#pet-mood');
-  if (md) {
-    md.dataset.mood = mood;
-    md.querySelector('.mood-emoji').textContent = m.emoji;
-    md.querySelector('.mood-label').textContent = m.label;
-  }
   const fig = $('#pet');
   if (fig) { fig.dataset.mood = mood; fig.classList.add('talking'); setAvatarMood(mood); avatarTalk(true); }
   clearTimeout(petCtl.talkTimer);
@@ -494,8 +479,6 @@ function syncVoiceUI() {
     : !speechSupported()
       ? 'Cet appareil ne propose pas de synthèse vocale : Pat parlera seulement dans sa bulle.'
       : v ? `Voix utilisée : ${v.name} (${v.lang}), grave et un peu lente.` : 'Aucune voix française trouvée pour l’instant : Pat parlera dans sa bulle (et avec la voix par défaut si elle existe).';
-  const mb = $('#btn-mute');
-  if (mb) { mb.textContent = voiceSettings.on ? '🔊 Voix' : '🔇 Muet'; mb.setAttribute('aria-pressed', String(!voiceSettings.on)); }
 }
 function setVoiceOn(on) { voiceSettings.on = on; if (!on) stopSpeaking(); saveVoice(); syncVoiceUI(); }
 
@@ -698,8 +681,6 @@ function bind() {
   $('#btn-ready')?.addEventListener('click', () => { showChecklist = false; render(); window.scrollTo(0, 0); });
   $('#btn-turn')?.addEventListener('click', () => act((s) => startTurn(s)));
   $('#pet')?.addEventListener('click', petSay);
-  $('#btn-talk')?.addEventListener('click', petSay);
-  $('#btn-mute')?.addEventListener('click', () => setVoiceOn(!voiceSettings.on));
   $('#btn-undo')?.addEventListener('click', undo);
   $('#btn-human-prep')?.addEventListener('click', () => act((s) => setHumanPrepared(s, nextSeason(s.season))));
   $('#btn-new2')?.addEventListener('click', confirmNew);
@@ -773,19 +754,14 @@ $('#tabs').addEventListener('click', (e) => {
   tab = b.dataset.tab; render(); window.scrollTo(0, 0);
 });
 initFullscreen($('#btn-fullscreen'));
-// Musique de fond : bouton 🎵 de l'en-tête (marche/arrêt) et volume dans ⚙️, indépendants de la voix.
+// Musique de fond : marche/arrêt et volume dans ⚙️ (v1.8.0 : plus de bouton 🎵 dans l'en-tête), indépendants de la voix.
 function syncMusicUI() {
-  const b = $('#btn-music');
-  b.setAttribute('aria-pressed', String(musicSettings.on));
-  b.classList.toggle('off', !musicSettings.on);
-  b.title = musicSettings.on ? 'Musique : activée' : 'Musique : coupée';
   $('#opt-music').checked = musicSettings.on;
   $('#opt-music-volume').value = String(musicSettings.volume);
   $('#opt-music-volume').disabled = !musicSettings.on;
 }
 initMusic();
 syncMusicUI();
-$('#btn-music').addEventListener('click', () => { setMusicOn(!musicSettings.on); syncMusicUI(); });
 $('#opt-music').addEventListener('change', (e) => { setMusicOn(e.target.checked); syncMusicUI(); });
 $('#opt-music-volume').addEventListener('input', (e) => setMusicVolume(e.target.value));
 $('#btn-settings').addEventListener('click', () => {

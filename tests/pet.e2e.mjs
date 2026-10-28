@@ -65,7 +65,7 @@ for (const vp of viewports) {
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('dialog', (d) => d.accept());
   const bubble = () => page.textContent('#pet-bubble');
-  const mood = () => page.getAttribute('#pet-mood', 'data-mood');
+  const mood = () => page.getAttribute('#pet', 'data-mood');
   const spoken = () => page.evaluate(() => window.__utterances.filter((u) => u.text.trim()).length
     + window.__plays.filter((p) => p.src !== 'silence.mp3').length);
   const lastPlay = () => page.evaluate(() => window.__plays.filter((p) => p.src !== 'silence.mp3').at(-1));
@@ -107,6 +107,9 @@ for (const vp of viewports) {
     assert(p1 && /^(content|grognon|impatient|endormi|triomphant|boudeur)-\d+(-\d+)?\.mp3$/.test(p1.src), `audio inattendu ${JSON.stringify(p1)}`);
     assert(!(await page.evaluate(() => window.__utterances.filter((u) => u.text.trim()).length)), 'synthèse utilisée alors que l’audio existe');
     assert((await mood()) === 'content', `humeur de départ ${await mood()}`);
+    // v1.8.0 : plus de jauge d'humeur, de boutons Parler/Voix ni de phrase d'aide sous Pat
+    for (const sel of ['#pet-mood', '.moodbar', '#btn-talk', '#btn-mute', '#btn-music']) assert(!(await page.$(sel)), `${sel} encore affiché`);
+    assert(!(await page.textContent('[data-player]')).includes('Touche Pat'), 'phrase « Touche Pat » encore affichée');
     await shot('contenu');
 
     // 2. Toucher Pat : nouvelle réplique, dite à voix haute, animation de parole
@@ -135,11 +138,12 @@ for (const vp of viewports) {
     assert((await spoken()) === n1 + 1, 'pas de relance après 75 s');
     assert((await bubble()) !== t3, 'relance identique');
 
-    // 4. Muet : la bulle change toujours, la voix se tait
-    await page.click('#btn-mute');
-    assert((await page.textContent('#btn-mute')).includes('Muet'), 'bouton muet');
+    // 4. Muet (réglage ⚙️) : la bulle change toujours, la voix se tait
+    await page.click('#btn-settings');
+    await page.uncheck('#opt-voice');
+    await page.click('#settings button:not([type])');
     const n2 = await spoken(); const t4 = await bubble();
-    await page.click('#btn-talk');
+    await page.click('#pet');
     assert((await bubble()) !== t4 && (await spoken()) === n2, 'muet : bulle ou voix incorrecte');
     await page.click('#btn-settings');
     assert(!(await page.isChecked('#opt-voice')), 'réglage voix non synchronisé');
