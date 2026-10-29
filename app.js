@@ -18,8 +18,10 @@ import { initFullscreen } from './fullscreen.js';
 import { initMusic, musicSettings, setMusicOn, setMusicVolume } from './music.js';
 import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
 import { introSettings, saveIntro, introWanted, showIntro, introOpen } from './intro.js';
+import { subsSettings, setSubsOn, applySubs } from './soustitres.js';
+applySubs(); // avant le premier rendu et l'intro : pas de bulle par défaut
 
-export const VERSION = '1.8.0';
+export const VERSION = '1.8.1';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -407,7 +409,7 @@ function petFigure(mood, small = false) {
     </button>`;
 }
 // Humeur : plus de jauge ni de boutons à l'écran (v1.8.0) ; elle choisit toujours la vidéo et les répliques.
-// Voix : ⚙️ ; toucher Pat le fait parler.
+// Voix : ⚙️ ; toucher Pat le fait parler. Bulle (sous-titres) masquée sauf réglage ⚙️ (v1.8.1, soustitres.js).
 function petPanel(mood) {
   const pet = ensurePet();
   return `<div class="pet-stage">
@@ -767,10 +769,13 @@ $('#opt-music-volume').addEventListener('input', (e) => setMusicVolume(e.target.
 $('#btn-settings').addEventListener('click', () => {
   $('#app-version').textContent = `Version ${VERSION}`; syncVoiceUI();
   $('#opt-intro').checked = introSettings.on;
+  $('#opt-subs').checked = subsSettings.on;
   $('#settings').showModal();
 });
 // Intro de Pat : réglage (à chaque ouverture ou non) et « Revoir l'intro ».
 $('#opt-intro').addEventListener('change', (e) => { introSettings.on = e.target.checked; saveIntro(); });
+// Sous-titres (v1.8.1) : bulle de Pat et sous-titre de l'intro, masqués par défaut.
+$('#opt-subs').addEventListener('change', (e) => setSubsOn(e.target.checked));
 $('#btn-intro-replay').addEventListener('click', () => { $('#settings').close?.(); clearPetTimers(); petCtl.key = null; stopSpeaking(); stopTalking(); openIntro(); });
 function openIntro() { showIntro({ onDone: () => render() }); }
 $('#opt-voice').addEventListener('change', (e) => setVoiceOn(e.target.checked));

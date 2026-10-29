@@ -3,7 +3,7 @@
 //    mises en cache par le service worker : fonctionne hors ligne et dans tous les navigateurs.
 //    Répliques avec un nombre : chaîne « début » + « nombre-N » + « fin » (petit silence entre les segments).
 // 2) Secours : synthèse vocale de l'appareil (Web Speech API) si un fichier manque.
-// La bulle de texte reste toujours affichée.
+// La bulle de texte est masquée par défaut depuis la v1.8.1 (réglage Sous-titres dans ⚙️).
 import { AUDIO_IDS } from './audio/liste.js';
 
 const VKEY = 'pat-cognefoudre:voice';
