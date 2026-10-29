@@ -279,6 +279,8 @@ hr { border: 0; border-top: 1px dashed rgba(59, 31, 77, .3); width: 100%; }
   border: 10px solid transparent; border-top: 0; border-bottom-color: #fff;
 }
 .bubble.pop { animation: pet-pop .35s ease-out; }
+/* Sous-titres (v1.8.1) : bulle et sous-titre de l'intro masqués sauf réglage ⚙️ (html.subs-on) ; aucun espace laissé. */
+html:not(.subs-on) .bubble, html:not(.subs-on) .intro-line { display: none; }
 .pet-final { margin-top: 14px; text-align: center; }
 .pet-final .pet { width: min(60vw, 240px); }
 .sheet-h { margin: 4px 0 8px; font-size: 1.05rem; }

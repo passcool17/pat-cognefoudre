@@ -60,7 +60,8 @@ const I = (page) => page.evaluate(() => ({ ...(window.__patIntro ? { open: windo
     await page.waitForFunction(() => window.__patAvatar?.shown === 'grognon-parle', null, { timeout: 5000 });
     const sub = await page.textContent('#intro-line');
     assert(/Roi des Bandits/.test(sub), `sous-titre : ${sub}`);
-    assert(await page.evaluate(() => getComputedStyle(document.querySelector('#intro-line')).opacity) > 0.5, 'sous-titre visible');
+    // v1.8.1 : sous-titres coupés par défaut → texte prêt mais pas affiché, et aucun espace laissé
+    assert(await page.evaluate(() => { const l = document.querySelector('#intro-line'); return getComputedStyle(l).display === 'none' && l.offsetHeight === 0; }), 'sous-titre affiché alors que les sous-titres sont coupés');
     await page.waitForTimeout(1200);
     const m = await I(page);
     assert(m.gain > 0.05 && m.gain < 0.2, `musique baissée sous la voix (${m.gain})`);
@@ -77,19 +78,23 @@ const I = (page) => page.evaluate(() => ({ ...(window.__patIntro ? { open: windo
     assert(!(await page.evaluate(() => document.body.classList.contains('intro-on'))), 'défilement rendu');
     await page.screenshot({ path: `${SHOTS}/intro-app.png` });
   });
-  await step('« Revoir l’intro » dans ⚙️ puis « Passer » : fermeture immédiate, voix coupée', async () => {
+  await step('« Revoir l’intro » dans ⚙️ (sous-titres cochés) puis « Passer » : fermeture immédiate, voix coupée', async () => {
     await page.click('#btn-settings');
     assert(await page.isChecked('#opt-intro'), 'réglage coché par défaut');
+    assert(!(await page.isChecked('#opt-subs')), 'sous-titres cochés par défaut');
+    await page.check('#opt-subs'); // v1.8.1 : avec les sous-titres, l'intro montre la réplique
     await page.screenshot({ path: `${SHOTS}/intro-reglages.png` });
     await page.click('#btn-intro-replay');
     await page.waitForSelector('#intro', { timeout: 3000 });
     await page.click('#intro-enter');
     await page.waitForFunction(() => window.__patAvatar?.talking, null, { timeout: 5000 });
+    await page.waitForFunction(() => { const l = document.querySelector('#intro-line'); return getComputedStyle(l).display !== 'none' && l.offsetHeight > 0 && /Roi des Bandits/.test(l.textContent); }, null, { timeout: 2000 });
     await page.click('#intro-skip');
     await page.waitForFunction(() => window.__patIntro.state === 'ferme' && !document.querySelector('#intro'), null, { timeout: 2000 });
     const m = await I(page);
     assert(m.closedBy === 'passer', JSON.stringify(m));
     await page.waitForFunction(() => !window.__patAvatar.talking && (!window.__patAudio || window.__patAudio.el.paused), null, { timeout: 2000 });
+    await page.click('#btn-settings'); await page.uncheck('#opt-subs'); await page.keyboard.press('Escape');
   });
   await step('réglage coupé → plus d’intro à l’ouverture (mémorisé)', async () => {
     await page.click('#btn-settings');
