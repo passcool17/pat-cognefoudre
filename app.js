@@ -21,7 +21,7 @@ import { introSettings, saveIntro, introWanted, showIntro, introOpen } from './i
 import { subsSettings, setSubsOn, applySubs } from './soustitres.js';
 applySubs(); // avant le premier rendu et l'intro : pas de bulle par défaut
 
-export const VERSION = '1.8.2';
+export const VERSION = '1.8.3';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -92,21 +92,25 @@ export function locLabel(loc) {
   if (loc === 'voy2') return 'le Voyage — lieu partagé (2 points)';
   if (loc === 'voyAny') return 'le Voyage — un lieu Voyage disponible';
   const b = baliseOf(loc);
-  if (b) return `la Balise de valeur ${b.value ?? '?'} (icône à ${b.side === 'g' ? 'gauche' : 'droite'} du sommet)`;
+  if (b) return `la ${baliseName(b.side)}`;
   return loc;
 }
+// Balise (v1.8.3) : 2 indications sur le Complot. La carte brune à gauche ou à droite du sommet = la balise où va l’ouvrier ;
+// les triangles bleus = jetons Point = l’emplacement de la Grosse Créature à défausser (celui qui montre ces points), et Pat les gagne.
+function baliseName(side) { return `balise de ${side === 'g' ? 'gauche' : 'droite'}`; }
+function ptIcon(n) { return `<span class="pt-ico" aria-label="${n ?? '?'} jeton${n > 1 ? 's' : ''} Point">${n ?? '?'}</span>`; }
 function aLieu(label) { return label.startsWith('le ') ? 'au ' + label.slice(3) : 'à ' + label; }
 function tactLabel(t) {
   return {
     forge: 'Forge', bouleau3: '3 Bouleaux', mousse2: '2 Mousses', cuivre1: '1 Cuivre + 1 carte', gland2: '2 Glands + 1 carte',
-    guilde: 'Guilde', balD: 'Balise ? (icône à droite)', voyage: 'Voyage (printemps uniquement)', balG: 'Balise ? (icône à gauche)',
+    guilde: 'Guilde', balD: 'Balise de droite (points : Complot)', voyage: 'Voyage (printemps uniquement)', balG: 'Balise de gauche (points : Complot)',
   }[t];
 }
 function quarterLabel(q) {
   const short = {
     bouleau3: '3 Bouleaux', mousse2: '2 Mousses', cuivre1: '1 Cuivre + carte', gland2: '2 Glands + carte', forge: 'Forge +🔥', guilde: 'Guilde',
     voyHaut: 'Voyage ↑ exclusif', voyBas: 'Voyage ↓ exclusif', voy2: 'Voyage partagé (2)',
-  }[q.loc] || (() => { const b = baliseOf(q.loc); return `Balise ${b.value} (${b.side === 'g' ? 'g.' : 'd.'})`; })();
+  }[q.loc] || (() => { const b = baliseOf(q.loc); return `Balise ${b.side === 'g' ? 'gauche' : 'droite'} · ${b.value} pt${b.value > 1 ? 's' : ''}`; })();
   return `🐾 ${short}<br>ou 🃏 ${q.src === 'pile' ? 'PILE' : 'VALLÉE'}`;
 }
 function stepper(name, value = 0, min = 0, max = 99) {
@@ -274,7 +278,7 @@ function renderPending() {
       if (k === 'ressource') detail = 'Pat bloque ce lieu. Il ne gagne aucune ressource.';
       if (k === 'forge') detail = 'Pat n’utilise que le lieu exclusif de la Forge. Il gagne 1 feu.';
       if (k === 'guilde') detail = 'Choisis un lieu exclusif de la Guilde, si possible inoccupé et avec de la neige. Pat ignore la limite de 2 ouvriers. Ensuite, sa quête.';
-      if (k === 'balise') detail = 'Pat défausse la Grosse Créature de cette balise et gagne ses jetons Point. Réapprovisionne ensuite.';
+      if (k === 'balise') detail = `Pose l’ouvrier de Pat sur la ${baliseName(baliseOf(p.loc).side)} (la carte brune à ${baliseOf(p.loc).side === 'g' ? 'gauche' : 'droite'} du sommet sur le Complot). Il ne paie pas de feu. Ensuite : la Grosse Créature à défausser.`;
       if (k === 'voyage') detail = S.level === 1 ? 'Niveau 1 : Pat prend toujours le lieu partagé (2 points).' : 'Pat part en Voyage (printemps).';
       const ranger = p.worker === 'ranger';
       return `<section class="card instr" data-step="place"><div class="kicker">Pat place ${workerName(p.worker)}${p.via !== null && p.via !== undefined ? ` · Tactiques ligne ${p.via + 1}` : ''}</div>
@@ -292,11 +296,16 @@ function renderPending() {
         </div></section>`;
     }
     case 'balise': {
-      return `<section class="card instr" data-step="balise"><div class="kicker">Balise</div>
-        <div class="big">Défausse la Grosse Créature de la balise ${p.value ?? '?'} et réapprovisionne.</div>
+      const known = p.value !== null && p.value !== undefined;
+      return `<section class="card instr" data-step="balise"><div class="kicker">Balise · 2 indications du Complot</div>
+        <ol class="steps bal-steps">
+          <li data-bal="balise">Ouvrier de Pat sur la <b>${baliseName(p.side ?? baliseOf(p.loc)?.side)}</b> (carte brune ${(p.side ?? baliseOf(p.loc)?.side) === 'g' ? 'à gauche' : 'à droite'} du sommet).</li>
+          <li data-bal="points">${known
+    ? `Défausse la Grosse Créature de l’emplacement qui montre ${ptIcon(p.value)} <b>${p.value} jeton${p.value > 1 ? 's' : ''} Point</b>, puis réapprovisionne. <b>Pat gagne ${p.value} point${p.value > 1 ? 's' : ''}.</b>`
+    : 'Le Complot n’indique pas de points : choisis l’emplacement de la Grosse Créature à défausser, puis réapprovisionne. Pat gagne les points de cet emplacement.'}</li></ol>
         ${p.mist ? mistNote('balise') : ''}
-        <p>Pat ignore le texte de la carte. Combien de jetons Point gagne-t-il ?</p>
-        <div class="field"><span class="lbl">Jetons Point</span>${stepper('points', p.value ?? 0)}</div>
+        <p class="hint">Pat ignore le texte de la Grosse Créature (p.19). Corrige le nombre si l’emplacement montre autre chose.</p>
+        <div class="field"><span class="lbl">Jetons Point gagnés</span>${stepper('points', p.value ?? 0)}</div>
         <button class="btn huge red" data-a="ok" data-form="points">Valider</button></section>`;
     }
     case 'voyageValue':
@@ -647,7 +656,7 @@ function renderRegles() {
     <li>En été, Pat a 2 ouvriers comme toi : 1 ouvrier normal + le garde forestier (mise en place p.6).</li>
     <li>Ouvriers normaux d’abord, garde forestier en dernier. Le garde forestier peut partager un lieu avec ton ouvrier (sans feu) ; sinon, il gagne 1 feu.</li>
     <li>Pat ne gagne ni ne paie de ressources. Il déblaie la neige gratuitement et la garde.</li>
-    <li>Forge : lieu exclusif, +1 feu. Guilde : lieu exclusif, puis une Quête en montagne ${scrollIcon('montagne')} si possible, sinon la quête du haut de sa pile. Si aucune quête n’est possible (pile vide, aucune ${scrollIcon('montagne')}), la carte Tactiques déplace l’ouvrier et un jeton Pat va dans la Vallée (p.19). Balise : il défausse la Grosse Créature et gagne ses points ; « Balise ? » sur la carte Tactiques = la valeur de balise indiquée ailleurs sur le Complot en cours (p.19). Voyage : au printemps seulement (au niveau 1, toujours le lieu partagé à 2).</li>
+    <li>Forge : lieu exclusif, +1 feu. Guilde : lieu exclusif, puis une Quête en montagne ${scrollIcon('montagne')} si possible, sinon la quête du haut de sa pile. Si aucune quête n’est possible (pile vide, aucune ${scrollIcon('montagne')}), la carte Tactiques déplace l’ouvrier et un jeton Pat va dans la Vallée (p.19). Balise : le Complot donne 2 choses. La carte brune à gauche ou à droite du sommet = la balise où va l’ouvrier ; les triangles bleus = les jetons Point : Pat défausse la Grosse Créature de l’emplacement qui montre ces points, réapprovisionne, et gagne ces points. « Balise ? » sur la carte Tactiques : la balise est celle de la ligne (gauche ou droite), et les points sont ceux indiqués ailleurs sur le Complot en cours (p.19). Voyage : au printemps seulement (au niveau 1, toujours le lieu partagé à 2).</li>
     <li>Lieu indisponible : suis la carte Tactiques dans le sens de la flèche du Plan, puis pose un jeton Pat dans la Vallée (p.19).</li>
     <li>Bout de la liste Tactiques atteint (par exemple, déjà un ouvrier sur la balise du bas) : c’est encore la flèche qui donne le sens, Pat ne joue pas de carte à la place <i>(réponse du concepteur, BGG, juill. 2025)</i>. L’app repart du lieu bloqué dans l’autre sens.</li>
     <li>Plus d’ouvriers alors que tu ne t’es pas préparé : il joue la carte de ce coin et gagne 1 neige (p.19). Au printemps aussi : tant qu’il a moins de 15 cartes, chaque case 🐾 devient une carte (+1 neige) (p.19 et p.21).</li>

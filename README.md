@@ -87,7 +87,7 @@ D’après **The Year of the Rabbit** d’Otto Gregor (campagne non officielle, 
 - Le Complot recouvre le coin du Plan avec son **coin opposé**, et c’est ce quart-là qu’on lit (schéma p.18) : caverne en haut à gauche → quart bas-droit du Complot, haut à droite → bas-gauche, bas à droite → haut-gauche, bas à gauche → haut-droit (corrigé en v1.7.2).
 - En été, Pat a 2 ouvriers : 1 ouvrier normal + le garde forestier (mise en place p.6), puis +1 en automne, +1 en hiver, +2 au printemps.
 - Pile Quête de Pat (p.17) : niveau 1 = 5 en plaine ; niveaux 2 et 3 = 4 + 1 en montagne ; niveau 4 = 3 + 2.
-- « Balise ? » de la carte Tactiques : valeur de balise ailleurs sur le Complot en cours (p.19).
+- Balise (v1.8.3) : le Complot donne **2 choses** : la carte brune à gauche ou à droite du sommet = la balise de l’ouvrier ; les triangles bleus = les jetons Point, qui désignent l’emplacement de la Grosse Créature à défausser, et Pat gagne ces points. « Balise ? » de la carte Tactiques : balise de la ligne, points indiqués ailleurs sur le Complot en cours (p.19).
 - Guilde sans quête possible : la carte Tactiques déplace l’ouvrier, et un jeton Pat va dans la Vallée (p.19).
 - Plus d’ouvriers (au printemps aussi, tant qu’il a moins de 15 cartes) : les cases ouvrier deviennent des cartes (+1 neige) (p.19 et p.21).
 - Jeton Pat sur une pile de doubles : Pat prend toute la pile en se préparant ou en fin de partie (p.20).

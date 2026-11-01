@@ -243,7 +243,7 @@ function resolvePlace(s, choice, { snow = false } = {}) {
   const k = locKind(p.loc);
   if (k === 'balise') {
     const b = baliseOf(p.loc);
-    s.pending = withMist(s, { kind: 'balise', loc: p.loc, value: b.value });
+    s.pending = withMist(s, { kind: 'balise', loc: p.loc, value: b.value, side: b.side });
     return s;
   }
   if (k === 'voyage') {
@@ -389,7 +389,7 @@ export function answer(s, choice, data = {}) {
       return resolvePlace(s, choice, data);
     case 'balise':
       s.points += Number(data.points) || 0;
-      log(s, `Balise : Pat défausse la Grosse Créature et gagne ${Number(data.points) || 0} point(s).`);
+      log(s, `Balise : Pat défausse la Grosse Créature de l’emplacement à ${Number(data.points) || 0} point(s) et gagne ${Number(data.points) || 0} jeton(s) Point.`);
       return finishAction(s);
     case 'voyageValue':
       s.voyagePoints += Number(data.points) || 0;

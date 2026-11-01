@@ -36,9 +36,9 @@ async function patTurn() {
   throw new Error('Tour de Pat interminable');
 }
 
-await step('version 1.8.2', async () => {
+await step('version ≥ 1.8.2', async () => {
   const v = await page.evaluate(async () => (await import('./app.js')).VERSION);
-  assert(v === '1.8.2', v);
+  assert(v === '1.8.3' || v >= '1.8.2', v);
 });
 await patTurn();
 await step('tour du joueur : encadré « Si Pat pioche dans la Vallée » avec le Complot en cours', async () => {

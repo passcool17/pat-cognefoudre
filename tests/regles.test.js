@@ -115,3 +115,35 @@ test('Complot en effet : sans Complot ce tour (préparation), le dernier posé s
   s.pending = null; s.cur = null;
   assert.equal(complotEnEffet(s).id, cid);
 });
+
+// v1.8.3 : la Balise donne 2 choses (livret p.19) : la balise de l'ouvrier (carte brune à gauche/droite du sommet)
+// et les points (triangles bleus) qui désignent la Grosse Créature à défausser ; Pat gagne ces points.
+import { respond, makeRng } from './sim.js';
+import { COMPLOTS } from '../data.js';
+import { baliseOf } from '../logic.js';
+function toBalise(seed) {
+  const s = newGame({ level: 2, seed }); const r = makeRng(seed);
+  for (let i = 0; i < 3000 && !s.ended; i++) {
+    if (!s.pending) startTurn(s);
+    if (s.pending.kind === 'balise') return s;
+    respond(s, r);
+  }
+  return null;
+}
+test('Balise : écran avec la balise (côté) ET les points du Complot, points crédités à Pat', () => {
+  let s = null;
+  for (let seed = 1; seed < 60 && !s; seed++) s = toBalise(seed);
+  assert.ok(s, 'aucune balise trouvée');
+  const p = s.pending;
+  assert.ok(['g', 'd'].includes(p.side), `côté ${p.side}`);
+  assert.equal(p.value, baliseOf(p.loc).value);
+  const before = s.points;
+  answer(s, 'ok', { points: p.value ?? 2 });
+  assert.equal(s.points, before + (p.value ?? 2));
+});
+test('Complots : chaque balise a un côté (g/d) et des points (1 à 3 triangles)', () => {
+  for (const c of COMPLOTS) for (const q of c.quarters) {
+    const b = baliseOf(q.loc);
+    if (b) { assert.ok(['g', 'd'].includes(b.side), c.id); assert.ok(b.value >= 1 && b.value <= 3, `${c.id} ${q.loc}`); }
+  }
+});
