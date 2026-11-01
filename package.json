@@ -16,7 +16,8 @@
     "test:intro-e2e": "node tests/intro.e2e.mjs",
     "test:regles-e2e": "node tests/regles.e2e.mjs",
     "test:voix-e2e": "node tests/voix.e2e.mjs",
-    "test:vallee-e2e": "node tests/vallee.e2e.mjs"
+    "test:vallee-e2e": "node tests/vallee.e2e.mjs",
+    "test:balise-e2e": "node tests/balise.e2e.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.64.1"

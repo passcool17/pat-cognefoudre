@@ -355,3 +355,8 @@ body.intro-on { overflow: hidden; }
 .vallee-pick summary { cursor: pointer; font-weight: 600; }
 .vallee-pick .chips { margin: 6px 0 2px; }
 .vallee-pick .hint { margin: 4px 0 0; }
+
+/* v1.8.3 : jeton Point (triangle bleu) et 2 indications de la Balise */
+.pt-ico { display: inline-flex; align-items: flex-end; justify-content: center; width: 1.6em; height: 1.4em; padding-bottom: .1em; box-sizing: border-box;
+  background: #7cc3d8; color: #13394a; font-weight: 700; font-size: .85em; clip-path: polygon(50% 0, 100% 100%, 0 100%); vertical-align: -.2em; }
+.bal-steps li { margin-bottom: 6px; }
