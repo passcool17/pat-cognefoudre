@@ -8,7 +8,7 @@ import { humanFinal, gameOptions, banditPlaceNote } from './campagne.js';
 import {
   newGame, startTurn, answer, adjust, setHumanPrepared, score, winner, workersLeft, patTokensFree,
   nextSeason, locKind, baliseOf, PLAN_BY_ID, COMPLOT_BY_ID, giveToPat, cityColors, winterFuryNote,
-  quarterIndexFor, CORNER_NAMES,
+  quarterIndexFor, CORNER_NAMES, complotEnEffet,
 } from './logic.js';
 import { TIMING, TEST_LINE, computeMood, newPet, pickLine } from './pet.js';
 import {
@@ -21,7 +21,7 @@ import { introSettings, saveIntro, introWanted, showIntro, introOpen } from './i
 import { subsSettings, setSubsOn, applySubs } from './soustitres.js';
 applySubs(); // avant le premier rendu et l'intro : pas de bulle par défaut
 
-export const VERSION = '1.8.1';
+export const VERSION = '1.8.2';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -417,11 +417,22 @@ function petPanel(mood) {
       <div class="bubble" id="pet-bubble" aria-live="polite">${esc(pet.text || '…')}</div>
     </div>`;
 }
+// Carte piochée par Pat dans la Vallée pendant ton tour (v1.8.2, décision de Pascal) : le Complot en effet reste affiché.
+function valleeDrawCard() {
+  const c = complotEnEffet(S);
+  if (!c) return `<details class="vallee-pick" data-card="vallee-pick"><summary>Si Pat pioche dans la Vallée</summary>
+    <p class="hint">Pas encore de Complot en cours : la priorité s’affichera après le premier tour de Pat.</p></details>`;
+  return `<details class="vallee-pick" data-card="vallee-pick" open><summary>Si Pat pioche dans la Vallée · Complot ${c.id}</summary>
+    ${chipsFor(c.colors)}
+    <p class="hint">Couleur prioritaire de gauche à droite, puis valeur la plus haute, puis la carte avec de la neige, puis gauche → droite / haut → bas. Face cachée chez lui. <i>(décision de Pascal)</i></p></details>`;
+}
+
 function renderPlayerTurn(nx) {
   return `<section class="card player-turn" data-step="idle" data-player="1">
       <div class="kicker">Tour du joueur · ${SEASON_LABEL[S.season]}</div>
       ${petPanel(currentMood())}
       ${S.passed ? '<p class="hint center">Pat a passé : continue tes tours jusqu’à ce que tu passes aussi.</p>' : ''}
+      ${valleeDrawCard()}
       <button class="btn huge red" id="btn-turn">J’ai fini mon tour → Tour de Pat</button>
       ${nx && !S.humanPrepared[nx] ? `<button class="btn ghost block" style="margin-top:10px" id="btn-human-prep">Je viens de me préparer pour ${SEASON_ARTICLE[nx]}</button>` : ''}
       ${S.passed && !S.ended ? '<button class="btn block" style="margin-top:10px" data-a2="endgame">J’ai passé aussi → fin de partie</button>' : ''}
@@ -518,6 +529,7 @@ function neighbourCard() {
       <p class="hint">Couleurs connues (${known}/${S.city}) : ${colors}</p>
       <button class="btn block" data-ev="give-fire">Je donne 1 feu à Pat → il le garde</button>
       <button class="btn block" style="margin-top:8px" data-ev="give">Je donne une carte à Pat / il pioche (ex. Leaf Ranger) → +1 carte face cachée</button>
+      ${valleeDrawCard()}
       <button class="btn ghost block" style="margin-top:8px" data-ev="give-res">Je donne une autre ressource → retour à la réserve</button>
       <p class="hint">Pat ne garde aucune ressource, sauf le feu (livret p.21).</p>
       <p class="hint">Pat n’a pas de main : une carte donnée va face cachée chez lui, sans limite. ${S.passed ? '<b>Pat a passé : on ne lui donne plus rien.</b>' : 'Une fois que Pat a passé, on ne lui donne plus rien.'}</p>
@@ -644,7 +656,8 @@ function renderRegles() {
     <li>PILE : la carte du dessus de la pile principale, face visible dans sa ville.</li>
     <li>VALLÉE : la couleur du Complot de gauche à droite, puis la valeur la plus haute, puis la neige, puis de gauche à droite et de haut en bas.</li>
     <li>Toujours gratuit, texte ignoré. Un jeton Pat sur la carte revient simplement dans la réserve.</li>
-    <li>Une carte que Pat pioche dans la Vallée (par exemple avec le Leaf Ranger : « ton adversaire peut piocher une carte de la Vallée ») va face cachée chez lui <i>(réponse du concepteur, BGG, juill. 2025)</i> ; une carte qu’il pioche dans la pile aussi (p.21).</li></ul>
+    <li>Une carte que Pat pioche dans la Vallée (par exemple avec le Leaf Ranger : « ton adversaire peut piocher une carte de la Vallée ») va face cachée chez lui <i>(réponse du concepteur, BGG, juill. 2025)</i> ; une carte qu’il pioche dans la pile aussi (p.21).</li>
+    <li>Quelle carte Pat pioche dans la Vallée pendant ton tour : le livret ne le dit pas. On suit la même priorité que quand il joue une carte de la Vallée, avec le Complot en cours : sa couleur de gauche à droite, puis la valeur la plus haute, puis la neige, puis de gauche à droite et de haut en bas. L’app garde ce Complot affiché pendant ton tour <i>(décision de Pascal)</i>.</li></ul>
   <h3>Saisons</h3><ul>
     <li id="fureur">Fureur de l’hiver : Pat compte comme un joueur. S’il est le premier à se préparer pour l’hiver, il retourne la tuile sur 2 feux et on remplace les Grosses Créatures, comme dans la règle de base. L’app te le rappelle à sa préparation pour l’hiver <i>(décision de Pascal, règle de base p.14)</i>.</li>
     <li>Pat ne gagne <b>pas</b> de feu en se préparant pour la saison <i>(réponse du concepteur, BGG, juill. 2025)</i>.</li>

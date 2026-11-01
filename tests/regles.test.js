@@ -95,3 +95,23 @@ test('Pat n’a pas de main : carte donnée face cachée, sans limite de 8', () 
   giveToPat(s, 'carte', 2);
   assert.equal(s.faceDown, 9);
 });
+
+// v1.8.2 : décision de Pascal, carte que Pat pioche dans la Vallée pendant ton tour.
+import { complotEnEffet, COMPLOT_BY_ID } from '../logic.js';
+test('Complot en effet pendant ton tour : celui du dernier tour de Pat', () => {
+  const s = newGame({ level: 2, seed: 5 });
+  assert.equal(complotEnEffet(s), null);
+  for (let i = 0; i < 40 && !s.cur; i++) { startTurn(s); if (!s.cur) s.pending = null; }
+  const cid = s.cur.complot;
+  s.pending = null;
+  const c = complotEnEffet(s);
+  assert.equal(c.id, cid);
+  assert.deepEqual(c.colors, COMPLOT_BY_ID[cid].colors);
+});
+test('Complot en effet : sans Complot ce tour (préparation), le dernier posé sur le Plan', () => {
+  const s = newGame({ level: 2, seed: 5 });
+  for (let i = 0; i < 40 && !s.cur; i++) { startTurn(s); if (!s.cur) s.pending = null; }
+  const cid = s.cur.complot;
+  s.pending = null; s.cur = null;
+  assert.equal(complotEnEffet(s).id, cid);
+});
