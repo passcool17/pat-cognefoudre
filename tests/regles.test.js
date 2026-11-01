@@ -116,7 +116,7 @@ test('Complot en effet : sans Complot ce tour (préparation), le dernier posé s
   assert.equal(complotEnEffet(s).id, cid);
 });
 
-// v1.8.3 : la Balise donne 2 choses (livret p.19) : la balise de l'ouvrier (carte brune à gauche/droite du sommet)
+// v1.8.3 : la Balise donne 2 choses (livret p.19) : la balise de l'ouvrier (à gauche/droite du sommet)
 // et les points (triangles bleus) qui désignent la Grosse Créature à défausser ; Pat gagne ces points.
 import { respond, makeRng } from './sim.js';
 import { COMPLOTS } from '../data.js';
