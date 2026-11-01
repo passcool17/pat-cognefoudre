@@ -41,9 +41,9 @@ await page.evaluate(async () => {
   const { TIMING } = await import('./pet.js'); for (const k of ['chatterMin', 'chatterMax', 'slowAfter', 'nagEvery']) TIMING[k] = 1e9;
 });
 
-await step('version 1.8.3', async () => {
+await step('version 1.8.4', async () => {
   const v = await page.evaluate(async () => (await import('./app.js')).VERSION);
-  assert(v === '1.8.3', v);
+  assert(v === '1.8.4', v);
 });
 await step('écran Balise : la balise ET l’emplacement à N points, séparés', async () => {
   await page.waitForSelector('[data-step="balise"]');
