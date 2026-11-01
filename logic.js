@@ -453,6 +453,19 @@ export function cityColors(s) {
 export const GIFT_KINDS = ['feu', 'carte', 'ressource'];
 // Livret Silverfrost : on ne donne rien à un joueur qui a passé (en solo : défausse / réserve). Pat n'a pas de main
 // (p.17) : une carte donnée va face cachée chez lui (p.21), donc sans limite de 8 cartes.
+// Complot en effet pendant le tour du joueur (v1.8.2) : celui du dernier tour de Pat, sinon le dernier posé sur le Plan.
+// Sert à la décision de Pascal : si Pat pioche dans la Vallée pendant ton tour, même priorité que quand il joue une carte de la Vallée.
+export function complotEnEffet(s) {
+  if (s.cur?.complot) return { id: s.cur.complot, corner: s.cur.corner, colors: COMPLOT_BY_ID[s.cur.complot].colors };
+  if (!s.plan) return null;
+  for (let k = 1; k <= 4; k++) {
+    const corner = (s.plan.next - k + 4) % 4;
+    const f = s.plan.filled[corner];
+    if (f && f !== 'skip' && COMPLOT_BY_ID[f]) return { id: f, corner, colors: COMPLOT_BY_ID[f].colors };
+  }
+  return null;
+}
+
 export function giveToPat(s, kind, n = 1) {
   if (!GIFT_KINDS.includes(kind)) throw new Error(`Don inconnu : ${kind}`);
   n = Math.max(1, Number(n) || 1);

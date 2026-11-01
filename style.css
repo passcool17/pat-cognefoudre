@@ -349,3 +349,9 @@ html:fullscreen, html:-webkit-full-screen { background: var(--night); }
 body.intro-on { overflow: hidden; }
 @keyframes intro-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .intro, .intro-inner, .intro-line { transition: none; animation: none; } }
+
+/* v1.8.2 : carte que Pat pioche dans la Vallée pendant ton tour (décision de Pascal) */
+.vallee-pick { margin: 10px 0; padding: 6px 10px; border: 1px dashed rgba(127,127,127,.5); border-radius: 10px; font-size: .92em; }
+.vallee-pick summary { cursor: pointer; font-weight: 600; }
+.vallee-pick .chips { margin: 6px 0 2px; }
+.vallee-pick .hint { margin: 4px 0 0; }

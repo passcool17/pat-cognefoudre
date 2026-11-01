@@ -116,6 +116,7 @@ npm run test:musique-e2e  # musique : premier toucher, baisse quand Pat parle (c
 npm run test:intro-e2e  # intro : Entrer (musique, Pat parle, sous-titre masqué par défaut), Passer, réglage ⚙️, Revoir avec sous-titres, iPhone, vidéo de démo intro-demo.mp4
 npm run test:regles-e2e  # règles Silverfrost : onglet Règles, garde forestier, Vallée, joueur à ta gauche
 npm run test:voix-e2e  # v1.8.0 : vrai mp3 joué au tour du joueur et au toucher, aucune synthèse, jauge/boutons/phrase/🎵 masqués, musique dans ⚙️ ; v1.8.1 : bulle masquée sans espace vide, réglage Sous-titres dans ⚙️ gardé au rechargement
+npm run test:vallee-e2e # v1.8.2 : Complot en cours affiché au tour du joueur et dans Suivi (carte piochée dans la Vallée, décision de Pascal)
 ```
 Voix : les mp3 viennent d’ElevenLabs (voix « C », faite par le bot Voix), déposés dans `/workspace/shared/voix-pat/final/` (`<id>.mp3`, plus les morceaux de `segments.json`). Pour les importer :
 ```
@@ -135,3 +136,5 @@ Si tu modifies une réplique dans `pet.js`, il faut redemander le mp3 au bot Voi
 - `voice.js` émet `pat:voix` (`{ on: true|false }`) au début et à la fin d’une réplique audio (chaîne comprise) ; `avatar.js` passe alors en « parle » ou en « repos ».
 
 Les images de cartes ne sont pas incluses : les cartes sont encodées comme données.
+
+- **Carte piochée dans la Vallée pendant ton tour** (v1.8.2, décision de Pascal) : le Complot en cours reste affiché (couleurs dans l’ordre) dans un petit encadré repliable au tour du joueur et dans Suivi, près de « Je donne une carte à Pat / il pioche ». Pat prend la couleur prioritaire de gauche à droite, puis la valeur la plus haute, puis la neige, puis gauche → droite / haut → bas ; la carte va face cachée chez lui.
