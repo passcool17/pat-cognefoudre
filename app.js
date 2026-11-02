@@ -21,7 +21,7 @@ import { introSettings, saveIntro, introWanted, showIntro, introOpen } from './i
 import { subsSettings, setSubsOn, applySubs } from './soustitres.js';
 applySubs(); // avant le premier rendu et l'intro : pas de bulle par défaut
 
-export const VERSION = '1.8.4';
+export const VERSION = '1.9.0';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';

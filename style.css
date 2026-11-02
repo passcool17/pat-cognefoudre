@@ -261,6 +261,8 @@ hr { border: 0; border-top: 1px dashed rgba(59, 31, 77, .3); width: 100%; }
 .pat-av-frame video { opacity: 0; transition: opacity .2s linear; background: transparent; }
 .pat-av-frame video.on { opacity: 1; }
 .pat-av-frame video.top { z-index: 1; }
+/* v1.9.0 : bouche ouverte par-dessus « repos », opacité réglée image par image selon la voix (avatar.js). */
+.pat-av-frame video.pat-bouche { z-index: 2; opacity: 0; transition: none; }
 .pet:active .pat-av-frame { transform: scale(.98); }
 .pet-flakes { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: 50%; }
 .pet-flakes i {
