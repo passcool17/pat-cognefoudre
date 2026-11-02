@@ -1,6 +1,9 @@
 // Pat peint (boucles de Créa) : par humeur, une boucle « repos » et une boucle « parle » (bouche animée, même cadrage).
 // Deux vidéos superposées : fondu d'environ 200 ms entre repos ↔ parle et entre humeurs.
 // API : mountAvatar(hôte, humeur), setAvatarMood(humeur), avatarTalk(true|false).
+// v1.9.0 : bouche qui suit la voix. Une 3e vidéo « bouche » (même boucle que « repos », bouche ouverte, faite par
+// tools/bouche/bouche.py à partir des boucles peintes) est superposée à « repos » ; son opacité suit les repères
+// Rhubarb de la réplique (levres.js). Sans repères (synthèse de l'appareil, muet), l'ancienne boucle « parle » reste.
 // La voix annonce aussi le début et la fin d'une réplique audio (y compris une chaîne de segments) :
 // window.dispatchEvent(new CustomEvent('pat:voix', { detail: { on: true|false } })).
 export const MOOD_LIST = ['content', 'grognon', 'impatient', 'endormi', 'triomphant', 'boudeur'];
@@ -9,14 +12,16 @@ const reduceMQ = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced
 const reduced = () => reduceMQ.matches;
 export const clipName = (mood, talking) => `${mood}-${talking ? 'parle' : 'repos'}`;
 export const videoUrl = (clip, ext) => `video/pat-${clip}.${ext}`;
+import { cues, idFromSrc, shapeAt, OUVERTURE } from './levres.js';
 export const posterUrl = (mood) => `video/pat-${mood}.jpg`;
 const FORMATS = [['webm', 'video/webm; codecs="vp9"'], ['mp4', 'video/mp4; codecs="avc1.4D401F"']];
 
 const st = {
   root: null, frame: null, poster: null, layers: [], front: 0,
   mood: null, talkFlag: false, voiceOn: false, clip: null, ext: null, gen: 0, switches: [], failed: false,
+  mouth: null, lips: false, audio: null, level: 0, shape: 'X', raf: 0, shapes: [],
 };
-const talking = () => st.talkFlag || st.voiceOn;
+const talking = () => (st.talkFlag || st.voiceOn) && !st.lips;
 
 function makeLayer() {
   const v = document.createElement('video');
@@ -42,7 +47,7 @@ function rememberFormat(v) {
   const ext = /\.webm(\?|$)/.test(v.currentSrc) ? 'webm' : 'mp4';
   if (st.ext === ext) return;
   st.ext = ext;
-  const urls = [clipName('content', false), clipName('content', true)].map((c) => videoUrl(c, ext));
+  const urls = [clipName('content', false), clipName('content', true), 'content-bouche'].map((c) => videoUrl(c, ext));
   navigator.serviceWorker?.ready?.then((reg) => reg.active?.postMessage({ type: 'precache', urls })).catch(() => {});
 }
 function playSafe(v) { if (reduced()) return Promise.resolve(false); const p = v.play?.(); return p?.then ? p.then(() => true, () => false) : Promise.resolve(true); }
@@ -55,11 +60,15 @@ function build() {
   st.frame = root.firstChild;
   st.poster = root.querySelector('img');
   st.layers = [makeLayer(), makeLayer()];
-  st.frame.append(...st.layers);
+  st.mouth = makeLayer();
+  st.mouth.classList.add('pat-bouche');
+  st.frame.append(...st.layers, st.mouth);
   window.__patAvatar = {
     get mood() { return st.mood; }, get clip() { return st.clip; }, get talking() { return talking(); },
     get shown() { const l = st.layers[st.front]; return l.classList.contains('on') ? l.dataset.clip : null; },
     get switches() { return st.switches.slice(); }, get failed() { return st.failed; },
+    get lips() { return st.lips; }, get shape() { return st.shape; }, get mouth() { return st.level; },
+    get shapes() { return st.shapes.slice(); },
   };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) playSafe(st.layers[st.front]); });
 }
@@ -77,11 +86,48 @@ export function setAvatarMood(mood) {
   if (!MOOD_LIST.includes(mood)) mood = 'content';
   st.root.dataset.mood = mood;
   if (mood !== st.mood) { st.mood = mood; st.poster.src = posterUrl(mood); }
+  load(st.mouth, `${mood}-bouche`);
   update();
 }
-export function avatarTalk(on) { st.talkFlag = !!on; update(); }
+// Attend la fin de la tâche en cours : speak() suit avatarTalk(true) et annonce s'il y a des repères de bouche.
+export function avatarTalk(on) { st.talkFlag = !!on; if (on) queueMicrotask(update); else update(); }
 if (typeof window !== 'undefined') {
-  window.addEventListener('pat:voix', (e) => { st.voiceOn = !!e.detail?.on; update(); });
+  window.addEventListener('pat:voix', (e) => {
+    st.voiceOn = !!e.detail?.on;
+    const ids = e.detail?.ids;
+    st.lips = st.voiceOn && !reduced() && Array.isArray(ids) && ids.length > 0 && ids.every((id) => cues(id));
+    if (st.lips) startLips();
+    update();
+  });
+  window.addEventListener('pat:audio', (e) => { st.audio = e.detail || null; });
+}
+
+// ---------- Bouche synchronisée ----------
+function startLips() {
+  if (st.raf || !st.mouth) return;
+  st.mouth.play?.()?.catch?.(() => {});
+  st.raf = requestAnimationFrame(lipFrame);
+}
+function lipFrame() {
+  const a = st.audio;
+  let target = 0;
+  st.shape = 'X';
+  if (st.lips && a && !a.paused && !a.ended) {
+    st.shape = shapeAt(cues(idFromSrc(a.currentSrc || a.src)), a.currentTime);
+    target = OUVERTURE[st.shape] ?? 0;
+  }
+  // Ouverture rapide, fermeture un peu plus douce (moins saccadé).
+  st.level += (target - st.level) * (target > st.level ? 0.6 : 0.45);
+  if (st.level < 0.02 && target === 0) st.level = 0;
+  // Même instant de boucle que la vidéo affichée (repos) : la tête ne bouge pas, seule la bouche change.
+  const base = st.layers[st.front];
+  if (base && st.mouth.duration && base.duration && Math.abs(st.mouth.currentTime - base.currentTime) > 0.08) {
+    try { st.mouth.currentTime = base.currentTime; } catch { /* */ }
+  }
+  st.mouth.style.opacity = String(Math.round(st.level * 100) / 100);
+  if (st.shapes[st.shapes.length - 1] !== st.shape) { st.shapes.push(st.shape); if (st.shapes.length > 200) st.shapes.shift(); }
+  if (st.lips || st.level > 0) st.raf = requestAnimationFrame(lipFrame);
+  else { st.raf = 0; st.shape = 'X'; st.mouth.style.opacity = '0'; st.mouth.pause?.(); }
 }
 
 // Affiche la boucle voulue (humeur × parle/repos) avec un fondu entre les deux couches.

@@ -32,7 +32,7 @@ export function audioChain(id, have = RECORDED) {
   return have.has(id) ? [id] : null;
 }
 export const hasRecording = (id) => !!audioChain(id);
-const voix = (on) => { try { window.dispatchEvent(new CustomEvent('pat:voix', { detail: { on } })); } catch { /* vieux navigateur */ } };
+const voix = (on, ids) => { try { window.dispatchEvent(new CustomEvent('pat:voix', { detail: { on, ids } })); } catch { /* vieux navigateur */ } };
 export const audioSupported = () => typeof window !== 'undefined' && typeof window.Audio === 'function';
 export const recordedCount = () => RECORDED.size;
 
@@ -87,7 +87,7 @@ function playChain(ids, my, onEnd, fallback) {
     if (p && p.then) p.then(() => { started = true; }, (err) => { if (err && err.name === 'AbortError') return; fail(); });
     else started = true;
   };
-  voix(true);
+  voix(true, ids); // avatar.js : repères de bouche pour ces fichiers (bouche qui suit la voix)
   playAt(0);
   // Segments suivants : chargés à l'avance (service worker / cache HTTP) pour enchaîner sans trou.
   for (const id of ids.slice(1)) { try { fetch(`audio/${id}.mp3`).catch(() => {}); } catch { /* */ } }
