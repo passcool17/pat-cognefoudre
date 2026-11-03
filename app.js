@@ -16,12 +16,12 @@ import {
 } from './voice.js';
 import { initFullscreen } from './fullscreen.js';
 import { initMusic, musicSettings, setMusicOn, setMusicVolume } from './music.js';
-import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
+import { mountAvatar, setAvatarMood, avatarTalk, avatarReact } from './avatar-rive.js';
 import { introSettings, saveIntro, introWanted, showIntro, introOpen } from './intro.js';
 import { subsSettings, setSubsOn, applySubs } from './soustitres.js';
 applySubs(); // avant le premier rendu et l'intro : pas de bulle par défaut
 
-export const VERSION = '1.9.0';
+export const VERSION = '1.10.0';
 const KEY = 'pat-cognefoudre:state';
 const HKEY = 'pat-cognefoudre:history';
 const SKEY = 'pat-cognefoudre:score';
@@ -133,6 +133,7 @@ function render() {
   if (introOpen()) return; // l'intro garde Pat ; on le remet en place à sa fermeture
   const fig = $('#pet');
   if (fig) mountAvatar(fig.querySelector('.pet-body'), fig.dataset.mood);
+  if ($('[data-fury]')) avatarReact('fureur'); // Fureur de l’hiver annoncée : Pat la montrera à son retour
   petSync();
   petFinalReact();
 }
@@ -144,6 +145,7 @@ function petFinalReact() {
   const pet = ensurePet();
   if (pet.finalKey === key) return;
   pet.finalKey = key;
+  if (key !== 'none') avatarReact(key === 'pat' ? 'gagne' : 'perd');
   petSay();
 }
 function renderNow() {
@@ -703,7 +705,7 @@ function bind() {
     return;
   }
   $('#btn-ready')?.addEventListener('click', () => { showChecklist = false; render(); window.scrollTo(0, 0); });
-  $('#btn-turn')?.addEventListener('click', () => act((s) => startTurn(s)));
+  $('#btn-turn')?.addEventListener('click', () => { avatarReact('tourPat'); act((s) => startTurn(s)); });
   $('#pet')?.addEventListener('click', petSay);
   $('#btn-undo')?.addEventListener('click', undo);
   $('#btn-human-prep')?.addEventListener('click', () => act((s) => setHumanPrepared(s, nextSeason(s.season))));
@@ -715,7 +717,7 @@ function bind() {
     const kind = S.pending?.kind;
     let data = {};
     if (b.dataset.form === 'prepare') data = { cardsTaken: val('cardsTaken'), snowTaken: val('snowTaken') };
-    if (b.dataset.form === 'points') data = { points: val('points') };
+    if (b.dataset.form === 'points') { data = { points: val('points') }; if (data.points > 0) avatarReact('points'); }
     if (b.dataset.form === 'place') data = { snow: checked('snow') };
     if (kind === 'card') data = { color: b.dataset.color, snow: checked('snow'), patToken: checked('patToken') };
     act((s) => answer(s, a, data));

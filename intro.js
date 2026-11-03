@@ -4,7 +4,7 @@
 // dit sa réplique d'accueil (voix C enregistrée : audio/test.mp3) avec sous-titre, puis l'intro s'efface en fondu.
 // « Passer » ferme tout de suite. Réglage dans ⚙️ (à chaque lancement : oui/non) et bouton « Revoir l'intro ».
 import { speak, stopSpeaking } from './voice.js';
-import { mountAvatar, setAvatarMood, avatarTalk } from './avatar.js';
+import { mountAvatar, setAvatarMood, avatarTalk } from './avatar-rive.js';
 import { TEST_LINE } from './pet.js';
 
 export const INTRO_KEY = 'pat-cognefoudre:intro';

@@ -35,7 +35,7 @@ test('bouche : identifiant de réplique depuis l’adresse audio', () => {
 test('bouche : une vidéo « bouche » par humeur (webm + mp4), gardée hors ligne', () => {
   for (const m of MOOD_LIST) for (const ext of ['webm', 'mp4']) assert.ok(fs.existsSync(new URL(`../video/pat-${m}-bouche.${ext}`, import.meta.url)), `${m}.${ext}`);
   const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-  assert.match(sw, /pat-cognefoudre-v20/);
+  assert.match(sw, /pat-cognefoudre-v2[0-9]/); // v20 à l’origine, v21 depuis Pat Rive
   assert.match(sw, /'audio\/bouche\.js'/); assert.match(sw, /'levres\.js'/);
   assert.match(sw, /repos\|parle\|bouche/);
 });

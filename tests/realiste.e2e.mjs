@@ -1,3 +1,4 @@
+// v1.10.0 : ce test vérifie l’avatar vidéo (repli de Pat Rive) : ?rive=0.
 // E2E du Pat peint (boucles de Créa) : par humeur, boucle « repos » au calme et « parle » pendant la voix,
 // fondu ~200 ms entre les deux et entre humeurs ; réplique numérotée = 3 segments enchaînés (a + nombre + b)
 // avec « parle » tout du long ; mouvement réduit = affiche fixe ; vidéo en panne = affiche. Aucune erreur console.
@@ -64,7 +65,7 @@ async function newPage(vp, { reduced = false, noVideo = false } = {}) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error' && !(noVideo && /Failed to load resource/.test(m.text()))) errors.push(m.text()); });
-  await page.goto(BASE);
+  await page.goto(`${BASE}?rive=0`);
   // Pas de bavardage spontané de Pat pendant les mesures (il couperait la chaîne testée).
   await page.evaluate(async () => { const { TIMING } = await import('./pet.js'); for (const k of ['chatterMin', 'chatterMax', 'slowAfter', 'nagEvery']) TIMING[k] = 1e9; });
   await page.click('[data-level="2"]'); await page.click('#btn-start'); await page.click('#btn-ready');
