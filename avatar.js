@@ -19,7 +19,7 @@ const FORMATS = [['webm', 'video/webm; codecs="vp9"'], ['mp4', 'video/mp4; codec
 const st = {
   root: null, frame: null, poster: null, layers: [], front: 0,
   mood: null, talkFlag: false, voiceOn: false, clip: null, ext: null, gen: 0, switches: [], failed: false,
-  mouth: null, lips: false, audio: null, level: 0, shape: 'X', raf: 0, shapes: [],
+  mouth: null, lips: false, audio: null, level: 0, shape: 'X', raf: 0, shapes: [], suspended: false,
 };
 const talking = () => (st.talkFlag || st.voiceOn) && !st.lips;
 
@@ -50,7 +50,7 @@ function rememberFormat(v) {
   const urls = [clipName('content', false), clipName('content', true), 'content-bouche'].map((c) => videoUrl(c, ext));
   navigator.serviceWorker?.ready?.then((reg) => reg.active?.postMessage({ type: 'precache', urls })).catch(() => {});
 }
-function playSafe(v) { if (reduced()) return Promise.resolve(false); const p = v.play?.(); return p?.then ? p.then(() => true, () => false) : Promise.resolve(true); }
+function playSafe(v) { if (reduced() || st.suspended) return Promise.resolve(false); const p = v.play?.(); return p?.then ? p.then(() => true, () => false) : Promise.resolve(true); }
 
 function build() {
   const root = document.createElement('span');
@@ -68,7 +68,7 @@ function build() {
     get shown() { const l = st.layers[st.front]; return l.classList.contains('on') ? l.dataset.clip : null; },
     get switches() { return st.switches.slice(); }, get failed() { return st.failed; },
     get lips() { return st.lips; }, get shape() { return st.shape; }, get mouth() { return st.level; },
-    get shapes() { return st.shapes.slice(); },
+    get shapes() { return st.shapes.slice(); }, get suspended() { return st.suspended; },
   };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) playSafe(st.layers[st.front]); });
 }
@@ -91,6 +91,15 @@ export function setAvatarMood(mood) {
 }
 // Attend la fin de la tâche en cours : speak() suit avatarTalk(true) et annonce s'il y a des repères de bouche.
 export function avatarTalk(on) { st.talkFlag = !!on; if (on) queueMicrotask(update); else update(); }
+// v1.10.0 : quand Pat Rive (avatar-rive.js) est affiché, les vidéos se mettent en pause (batterie) ;
+// on les relance si Rive tombe en panne.
+export function suspendVideo(on) {
+  on = !!on;
+  if (on === st.suspended) return;
+  st.suspended = on;
+  if (on) { for (const v of [...st.layers, st.mouth]) v?.pause?.(); if (st.mouth) st.mouth.style.opacity = '0'; }
+  else { st.clip = null; update(); }
+}
 if (typeof window !== 'undefined') {
   window.addEventListener('pat:voix', (e) => {
     st.voiceOn = !!e.detail?.on;
@@ -104,7 +113,7 @@ if (typeof window !== 'undefined') {
 
 // ---------- Bouche synchronisée ----------
 function startLips() {
-  if (st.raf || !st.mouth) return;
+  if (st.raf || !st.mouth || st.suspended) return;
   st.mouth.play?.()?.catch?.(() => {});
   st.raf = requestAnimationFrame(lipFrame);
 }
@@ -134,6 +143,7 @@ function lipFrame() {
 function update() {
   if (!st.root || !st.mood) return;
   st.root.classList.toggle('talking', talking());
+  if (st.suspended) return;
   const clip = clipName(st.mood, talking());
   if (clip === st.clip) return;
   const prev = st.clip;
@@ -165,6 +175,6 @@ function update() {
   };
   if (next.readyState >= 2) sync(); else next.addEventListener('loadeddata', sync, { once: true });
   next.addEventListener('playing', show, { once: true });
-  playSafe(next).then((ok) => { if (ok && !next.paused) show(); else if (!ok) { st.failed = true; } });
+  playSafe(next).then((ok) => { if (ok && !next.paused) show(); else if (!ok && !st.suspended) { st.failed = true; } });
   setTimeout(show, 900); // réseau lent : on bascule quand même (l'affiche reste dessous)
 }

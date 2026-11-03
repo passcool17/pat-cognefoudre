@@ -1,3 +1,4 @@
+// v1.10.0 : ce test vérifie l’avatar vidéo (repli de Pat Rive) : ?rive=0.
 // E2E v1.9.0 : la bouche de Pat suit sa voix. Pendant une réplique mp3, la boucle « repos » reste affichée et la
 // vidéo « bouche » (bouche ouverte) change d'opacité selon les repères Rhubarb : plusieurs formes, ouvertures
 // différentes ; à la fin de l'audio, bouche fermée (X, opacité 0). Téléphone 412×915.
@@ -21,7 +22,7 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 let ok = true;
 try {
-  await page.goto(`${BASE}?intro=0`);
+  await page.goto(`${BASE}?intro=0&rive=0`);
   await page.click('[data-level="2"]'); await page.click('#btn-start'); await page.click('#btn-ready');
   for (let i = 0; i < 40 && !(await page.$('[data-player] #pet')); i++) {
     const k = await page.getAttribute('[data-step]', 'data-step');

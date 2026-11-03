@@ -1,13 +1,16 @@
-const CACHE = 'pat-cognefoudre-v20';
+const CACHE = 'pat-cognefoudre-v21';
 const MOODS = ['content', 'grognon', 'impatient', 'endormi', 'triomphant', 'boudeur'];
 const ASSETS = [
-  './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'pet.js', 'voice.js', 'audio/liste.js', 'audio/liste.json', 'audio/bouche.js', 'levres.js', 'avatar.js', 'intro.js', 'manifest.webmanifest',
+  './', 'index.html', 'style.css', 'app.js', 'logic.js', 'data.js', 'pet.js', 'voice.js', 'audio/liste.js', 'audio/liste.json', 'audio/bouche.js', 'levres.js', 'avatar.js', 'avatar-rive.js', 'intro.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'img/lynx.jpg',
   ...MOODS.map((m) => `video/pat-${m}.jpg`),
 ];
 const isVideo = (url) => /\/video\/pat-[a-z]+-(repos|parle|bouche)\.(webm|mp4)$/.test(new URL(url).pathname);
 // Campagne « L'année du Lapin » (ligne séparée : le fichier sw.js modifié suffit à réinstaller le cache).
 ASSETS.push('campagne.js', 'campagne-ui.js', 'campagne.css', 'fullscreen.js', 'music.js', 'soustitres.js');
+// v1.10.0 : Pat Rive, moteur figé @rive-app/canvas-lite 2.49.1 (≈ 1,4 Mo) + une scène par humeur (≈ 2,2 Mo).
+// rive_fallback.wasm (vieux processeurs seulement) est gardé à sa première lecture.
+ASSETS.push('vendor/rive/rive.js', 'vendor/rive/rive.wasm', ...MOODS.map((m) => `rive/pat-${m}.riv`));
 // La musique (≈ 2 Mo) n'est pas préchargée : elle est gardée en cache à sa première lecture (voir fetch).
 self.addEventListener('install', (e) => {
   // Cœur de l'app, puis toutes les répliques audio (≈ 3 Mo) pour que Pat parle hors ligne.

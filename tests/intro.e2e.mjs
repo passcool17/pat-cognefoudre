@@ -1,3 +1,4 @@
+// v1.10.0 : ce test vérifie l’avatar vidéo (repli de Pat Rive) : ?rive=0.
 // E2E de l'intro de Pat au lancement : écran plein (Pat grognon « repos », titre, « Entrer »), toucher → musique
 // en fondu + Pat « parle » + sous-titre + voix (audio/test.mp3), puis fondu vers l'app ; « Passer » ; réglage ⚙️
 // (coupée → plus d'intro) et « Revoir l'intro » ; iPhone Safari (UA + vidéos muted/playsinline).
@@ -41,7 +42,7 @@ const I = (page) => page.evaluate(() => ({ ...(window.__patIntro ? { open: windo
 // 1. Brave Linux (Chrome) : intro complète.
 {
   const { ctx, page } = await open();
-  await page.goto(BASE);
+  await page.goto(`${BASE}?rive=0`);
   await step('intro à l’ouverture : Pat grognon au repos, titre, « Entrer », silence', async () => {
     await page.waitForSelector('#intro .intro-enter', { timeout: 5000 });
     await page.waitForFunction(() => window.__patAvatar?.shown === 'grognon-repos', null, { timeout: 8000 });
@@ -125,7 +126,7 @@ const I = (page) => page.evaluate(() => ({ ...(window.__patIntro ? { open: windo
 // 2. Partie en cours, tour du joueur : l'intro passe d'abord, Pat retrouve sa place ensuite.
 {
   const { ctx, page } = await open();
-  await page.goto(`${BASE}?intro=0`);
+  await page.goto(`${BASE}?intro=0&rive=0`);
   await page.evaluate(async () => { const { TIMING } = await import('./pet.js'); for (const k of ['chatterMin', 'chatterMax', 'slowAfter', 'nagEvery']) TIMING[k] = 1e9; });
   await page.click('[data-level="2"]'); await page.click('#btn-start'); await page.click('#btn-ready');
   for (let i = 0; i < 40 && !(await page.$('[data-player] #pet')); i++) {
@@ -133,7 +134,7 @@ const I = (page) => page.evaluate(() => ({ ...(window.__patIntro ? { open: windo
     await page.click({ idle: '#btn-turn', card: '[data-color]', askHuman: '[data-a="no"]', guildQuest: '[data-a="mountain"]', patToken: '[data-a]' }[k] || '[data-a="ok"]');
   }
   await step('partie en cours : intro par-dessus, puis Pat revient dans ton tour', async () => {
-    await page.goto(BASE);
+    await page.goto(`${BASE}?rive=0`);
     await page.waitForSelector('#intro', { timeout: 3000 });
     assert(await page.evaluate(() => !!document.querySelector('#intro .pat-av') && !document.querySelector('#pet .pat-av')), 'Pat doit être dans l’intro');
     await page.click('#intro-skip');
@@ -146,7 +147,7 @@ const I = (page) => page.evaluate(() => ({ ...(window.__patIntro ? { open: windo
 // 3. iPhone Safari (UA iOS, écran tactile) : vidéos muettes en ligne, « Entrer » lance tout.
 {
   const { ctx, page } = await open({ userAgent: IPHONE });
-  await page.goto(BASE);
+  await page.goto(`${BASE}?rive=0`);
   await step('iPhone : intro, vidéos muted + playsinline, toucher → son et parole', async () => {
     await page.waitForSelector('#intro', { timeout: 5000 });
     const v = await page.evaluate(() => [...document.querySelectorAll('#intro video')].map((x) => x.muted && x.hasAttribute('playsinline')));
@@ -167,7 +168,7 @@ if (process.env.DEMO !== '0') {
     const dir = fs.mkdtempSync('/tmp/intro-demo-');
     const t0 = Date.now();
     const { ctx, page } = await open({ recordVideo: { dir, size: { width: 390, height: 844 } }, deviceScaleFactor: 1 });
-    await page.goto(BASE);
+    await page.goto(`${BASE}?rive=0`);
     await page.waitForFunction(() => window.__patAvatar?.shown === 'grognon-repos', null, { timeout: 8000 });
     await page.waitForTimeout(2200);
     const tap = (Date.now() - t0) / 1000;
